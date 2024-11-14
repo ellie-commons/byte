@@ -1,21 +1,12 @@
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2024 Alain <alainmh23@gmail.com>
+ */
+
 public class Byte : Gtk.Application {
     public MainWindow main_window;
 
-    public static Services.Database database;
     public static GLib.Settings settings;
-    public static Services.Player player;
-    public static Services.TagManager tg_manager;
-    public static Services.CoverImport cover_import;
-    public static Services.Indicator indicator;
-    public static Services.Notification notification;
-    public static Services.Scan scan_service;
-    public static Services.RadioBrowser radio_browser;
-    public static Services.Lastfm lastfm_service;
-    public static Services.NavController navCtrl;
-    public static Utils utils;
-
-    public bool has_entry_focus = false;
-    public SimpleAction toggle_playing_action;
 
     public static Byte _instance = null;
     public static Byte instance {
@@ -27,188 +18,83 @@ public class Byte : Gtk.Application {
         }
     }
 
-    [CCode (array_length = false, array_null_terminated = true)]
-    string[] ? arg_files = null;
-
     public Byte () {
-        // Init internationalization support
-        Intl.setlocale (LocaleCategory.ALL, "");
-        string langpack_dir = Path.build_filename (Constants.INSTALL_PREFIX, "share", "locale");
-        Intl.bindtextdomain (Constants.GETTEXT_PACKAGE, langpack_dir);
-        Intl.bind_textdomain_codeset (Constants.GETTEXT_PACKAGE, "UTF-8");
-        Intl.textdomain (Constants.GETTEXT_PACKAGE);
-        
-        // Dir to Database
-        utils = new Utils ();
-        utils.create_dir_with_parents ("/.local/share/com.github.alainm23.byte");
-        utils.create_dir_with_parents ("/.local/share/com.github.alainm23.byte/covers");
+        Object (
+                application_id: "io.github.ellie_commons.byte",
+                flags: ApplicationFlags.FLAGS_NONE
+        );
+    }
 
-        settings = new Settings ("com.github.alainm23.byte");
-        player = new Services.Player ();
-        database = new Services.Database ();
-        tg_manager = new Services.TagManager ();
-        cover_import = new Services.CoverImport ();
-        notification = new Services.Notification ();
-        scan_service = new Services.Scan ();
-        radio_browser = new Services.RadioBrowser ();
-        lastfm_service = new Services.Lastfm ();
-        navCtrl = new Services.NavController ();
+    ~Byte () {
+        print ("Destroying Byte\n");
     }
 
     construct {
-        this.flags |= ApplicationFlags.HANDLES_OPEN;
-        this.flags |= ApplicationFlags.HANDLES_COMMAND_LINE;
-        this.application_id = "com.github.alainm23.byte";
+        create_dir_with_parents ("/io.github.ellie_commons.byte");
+    }
+
+    protected override void startup () {
+        base.startup ();
+
+        Granite.init ();
+
+        Intl.setlocale (LocaleCategory.ALL, "");
+        Intl.bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+        Intl.bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+        Intl.textdomain (GETTEXT_PACKAGE);
+
+        var quit_action = new SimpleAction ("quit", null);
+        quit_action.activate.connect (quit);
+        add_action (quit_action);
+        
+        set_accels_for_action ("app.quit", { "<Control>q" });
+
+        var granite_settings = Granite.Settings.get_default ();
+        var gtk_settings = Gtk.Settings.get_default ();
+
+        gtk_settings.gtk_application_prefer_dark_theme =
+            granite_settings.prefers_color_scheme == DARK;
+
+        granite_settings.notify["prefers-color-scheme"].connect (() => {
+            gtk_settings.gtk_application_prefer_dark_theme =
+                granite_settings.prefers_color_scheme == DARK;
+        });
     }
 
     protected override void activate () {
-        if (get_windows ().length () > 0) {
-            get_windows ().data.present ();
+        if (main_window != null) {
+            main_window.present ();
             return;
         }
 
-        main_window = new MainWindow (this);
+        var main_window = new MainWindow (this);
 
-        int window_x, window_y;
-        var rect = Gtk.Allocation ();
+        settings = new Settings ("io.github.ellie_commons.byte");
+        settings.bind ("window-height", main_window, "default-height", SettingsBindFlags.DEFAULT);
+        settings.bind ("window-width", main_window, "default-width", SettingsBindFlags.DEFAULT);
 
-        settings.get ("window-position", "(ii)", out window_x, out window_y);
-        settings.get ("window-size", "(ii)", out rect.width, out rect.height);
-
-        if (window_x != -1 || window_y != -1) {
-            main_window.move (window_x, window_y);
-        }
-
-        main_window.set_allocation (rect);
-        main_window.show_all ();
-
-        // Indicator
-        indicator = new Services.Indicator ();
-        indicator.initialize ();
-
-        // Media Keys
-        Services.MediaKey.listen ();
-
-        // Actions
-        var quit_action = new SimpleAction ("quit", null);
-        set_accels_for_action ("app.quit", {"<Control>q"});
-
-        toggle_playing_action = new SimpleAction ("toggle_playing_action", null);
-        set_accels_for_action ("app.toggle_playing_action", {"space"});
-
-        var search_action = new SimpleAction ("search", null);
-        set_accels_for_action ("app.search", {"<Control>f"});
-
-        quit_action.activate.connect (() => {
-            if (main_window != null) {
-                main_window.destroy ();
-            }
-        });
-
-        toggle_playing_action.activate.connect (() => {
-            if (!has_entry_focus) {
-                player.toggle_playing ();
-            }
-        });
-
-        search_action.activate.connect (() => {
-            //player.toggle_playing ();
-        });
-
-        add_action (quit_action);
-        add_action (toggle_playing_action);
-        add_action (search_action);
-
-        // Default Icon Theme
-        weak Gtk.IconTheme default_theme = Gtk.IconTheme.get_default ();
-        default_theme.add_resource_path ("/com/github/alainm23/byte");
-
-
-        // Stylesheet
         var provider = new Gtk.CssProvider ();
-        provider.load_from_resource ("/com/github/alainm23/byte/stylesheet.css");
-        Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        provider.load_from_resource ("/io/github/ellie_commons/byte/Application.css");
 
-        utils.apply_theme (Byte.settings.get_enum ("theme"));
+        Gtk.StyleContext.add_provider_for_display (
+                                                   Gdk.Display.get_default (),
+                                                   provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+
+        main_window.present ();
     }
 
-    public override void open (File[] files, string hint) {
-        activate ();
-        if (files [0].query_exists ()) {
-            main_window.open_file (files [0]);
+    public void create_dir_with_parents (string dir) {
+        string path = Environment.get_user_data_dir () + dir;
+        File tmp = File.new_for_path (path);
+        if (tmp.query_file_type (0) != FileType.DIRECTORY) {
+            GLib.DirUtils.create_with_parents (path, 0775);
         }
     }
 
-    public override int command_line (ApplicationCommandLine cmd) {
-        command_line_interpreter (cmd);
-        return 0;
+    public static int main (string[] args) {
+        Gst.init (ref args);
+        Byte app = Byte.instance;
+        return app.run (args);
     }
-
-    private void command_line_interpreter (ApplicationCommandLine cmd) {
-        string[] args_cmd = cmd.get_arguments ();
-        unowned string[] args = args_cmd;
-
-        bool next = false;
-        bool prev = false;
-        bool play = false;
-
-        GLib.OptionEntry [] options = new OptionEntry [5];
-        options [0] = { "next", 0, 0, OptionArg.NONE, ref next, "Play next track", null };
-        options [1] = { "prev", 0, 0, OptionArg.NONE, ref prev, "Play previous track", null };
-        options [2] = { "play", 0, 0, OptionArg.NONE, ref play, "Toggle playing", null };
-        options [3] = { "", 0, 0, OptionArg.STRING_ARRAY, ref arg_files, null, "[URI…]" };
-        options [4] = { null };
-
-        var opt_context = new OptionContext ("actions");
-        opt_context.add_main_entries (options, null);
-        try {
-            opt_context.parse (ref args);
-        } catch (Error err) {
-            warning (err.message);
-            return;
-        }
-
-        if (next || prev || play) {
-            if (next && main_window != null) {
-                Byte.player.next ();
-            } else if (prev && main_window != null) {
-                Byte.player.prev ();
-            } else if (play) {
-                if (main_window == null) {
-                    activate ();
-                }
-                Byte.player.toggle_playing ();
-            }
-
-            return;
-        }
-
-        File[] files = null;
-        foreach (string arg_file in arg_files) {
-            if (GLib.FileUtils.test (arg_file, GLib.FileTest.EXISTS)) {
-                files += (File.new_for_path (arg_file));
-            }
-        }
-
-        if (files != null && files.length > 0) {
-            open (files, "");
-            return;
-        }
-
-        activate ();
-    }
-
-    public void toggle_playing_action_enabled (bool b) {
-        if (b) {
-            set_accels_for_action ("app.toggle_playing_action", {"space"});
-        } else {
-            set_accels_for_action ("app.toggle_playing_action", {null});
-        }
-    }
-}
-
-public static int main (string[] args) {
-    Gst.init (ref args);
-    var app = Byte.instance;
-    return app.run (args);
 }

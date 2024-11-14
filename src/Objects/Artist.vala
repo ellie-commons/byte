@@ -1,10 +1,9 @@
 public class Objects.Artist : GLib.Object {
-    public int id;
-    public string name;
+    public string id { get; set; default = ""; }
+    public string name { get; set; default = ""; }
 
-    public Artist (int id = 0,
-                  string name = "") {
-        this.id = id;
-        this.name = name;
+    public void to_string () {
+        print ("Artist ID: %s\n", id);
+        print ("Artist Name: %s\n", name);
     }
 }

@@ -1,0 +1,52 @@
+.primary-headerbar {
+    background: #fe2851;
+    color: #fafafa;
+}
+
+.primary-headerbar button {
+    background: #fe2851;
+    color: #fafafa;
+}
+
+.primary-color,
+.primary-color image {
+    color: #fe2851;
+}
+
+.sidebar-row {
+    border-radius: 6px;
+    margin-bottom: 3px;
+    font-weight: 500;
+}
+
+.sidebar-row:selected,
+.sidebar-row:hover,
+.sidebar-row:active {
+    background: transparent;
+}
+
+.sidebar-row image {
+    color: #fe2851;
+}
+
+.sidebar-row.selected,
+.sidebar-row.selected image {
+    background: #fe2851;
+    color: white;
+}
+
+.hidden-button image {
+    transition: all 250ms ease-in-out;
+}
+
+.hidden-button.opened image {
+    -gtk-icon-transform: rotate(90deg);
+}
+
+.hidden-button.opened {
+    -gtk-icon-transform: rotate(90deg);
+}
+
+.no-padding {
+    padding: 0;
+}

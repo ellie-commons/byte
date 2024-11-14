@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>{{APPLICATION_ID}}</id>
+  <name>{{PROJECT_NAME}}</name>
+  <summary>Proves that we can use Vala and Gtk</summary>
+  <metadata_license>CC-BY-4.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>
+      A quick summary of your app's main selling points and features. Just a couple sentences per paragraph is best
+    </p>
+  </description>
+  <launchable type="desktop-id">{{APPLICATION_ID}}.desktop</launchable>
+  <kudos>
+    <kudo>ModernToolkit</kudo>
+    <kudo>HiDpiIcon</kudo>
+  </kudos>
+  <developer id="io.github.ellie_commons">
+    <name>{{DEVELOPER_NAME}}</name>
+  </developer>
+  <update_contact>{{DEVELOPER_EMAIL}}</update_contact>
+  <custom>
+    <value key="x-appcenter-color-primary">#603461</value>
+    <value key="x-appcenter-suggested-price">5</value>
+    <value key="x-appcenter-stripe">pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</value>
+  </custom>
+</component>

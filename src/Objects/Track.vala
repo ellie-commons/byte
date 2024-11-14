@@ -1,95 +1,65 @@
 public class Objects.Track : GLib.Object {
-    public int track_order; 
-    public int id;      
-    public int album_id;
-    public int artist_id;          
-    public int track;             
-    public int disc;              
-    public int play_count;        
-    public int is_favorite;       
-    public int bitrate;           
-    public int bpm;               
-    public int rating;            
-    public int samplerate;        
-    public int channels;          
-    public int year;     
-    public int playlist_id;         
-    public uint64 duration;       
-    public string path;           
-    public string title;          
-    public string favorite_added; 
-    public string last_played;    
-    public string album_title;    
-    public string artist_name;    
-    public string composer;       
-    public string grouping;       
-    public string comment;        
-    public string lyrics;         
-    public string genre;          
-    public string album_artist;   
-    public string playlist_title;
-    public string date_added; 
-    public string playlist_added;     
+    public string id { get; set; default = ""; }
+    public string album_id { get; set; default = ""; }
+    public int track_order { get; set; default = 0; }
+    public int track { get; set; default = 0; }
+    public int disc { get; set; default = 0; }
+    public int play_count { get; set; default = 0; }
+    public int is_favorite { get; set; default = 0; }
+    public int bitrate { get; set; default = 0; }
+    public int bpm { get; set; default = 0; }
+    public int rating { get; set; default = 0; }
+    public int samplerate { get; set; default = 0; }
+    public int channels { get; set; default = 0; }
+    public int year { get; set; default = 0; }
+    public int playlist_id { get; set; default = 0; }
+    public uint64 duration { get; set; default = 0; }
+    public string path { get; set; default = ""; }
+    public string title { get; set; default = ""; }
+    public string favorite_added { get; set; default = ""; }
+    public string last_played { get; set; default = ""; }
+    public string album_title { get; set; default = ""; }
+    public string artist_name { get; set; default = ""; }
+    public string composer { get; set; default = ""; }
+    public string grouping { get; set; default = ""; }
+    public string comment { get; set; default = ""; }
+    public string lyrics { get; set; default = ""; }
+    public string genre { get; set; default = ""; }
+    public string album_artist { get; set; default = ""; }
+    public string playlist_title { get; set; default = ""; }
+    public string date_added { get; set; default = new GLib.DateTime.now_local ().to_string (); }
+    public string playlist_added { get; set; default = ""; }
 
-    public Track (int track_order = 0,
-                  int id = 0,
-                  int album_id = 0,
-                  int artist_id = 0,
-                  int track = 0,
-                  int disc = 0,
-                  int play_count = 0,
-                  int is_favorite = 0,
-                  int bitrate = 0,
-                  int bpm = 0,
-                  int rating = 0,
-                  int samplerate = 0,
-                  int channels = 0,
-                  int year = 0,
-                  int playlist_id = 0,
-                  uint64 duration = 0,
-                  string path = "",
-                  string title = "",
-                  string favorite_added = "",
-                  string last_played = "",
-                  string album_title = "",
-                  string artist_name = "",
-                  string composer = "",
-                  string grouping = "",
-                  string comment = "",
-                  string lyrics = "",
-                  string genre = "",
-                  string album_artist = "",
-                  string playlist_title = "",
-                  string date_added = new GLib.DateTime.now_local ().to_string ()) {
-        this.track_order = track_order;
-        this.id = id;
-        this.album_id = album_id;
-        this.artist_id = artist_id;
-        this.track = track;
-        this.disc = disc;
-        this.play_count = play_count;
-        this.is_favorite = is_favorite;
-        this.bitrate = bitrate;
-        this.bpm = bpm;
-        this.rating = rating;
-        this.samplerate = samplerate;
-        this.channels = channels;
-        this.year = year;
-        this.playlist_id = playlist_id;
-        this.duration = duration;
-        this.path = path;
-        this.title = title;
-        this.favorite_added = favorite_added;
-        this.last_played = last_played;
-        this.album_title = album_title;
-        this.artist_name =artist_name;
-        this.composer = composer;
-        this.grouping = grouping;
-        this.comment = comment;
-        this.lyrics = lyrics;
-        this.genre = genre;
-        this.album_artist = album_artist;
-        this.playlist_title = playlist_title;
-        this.date_added = date_added;
+    public void to_string () {
+        print ("ID: %s\n", id);
+        print ("Album ID: %s\n", album_id);
+        print ("Track Order: %d\n", track_order);
+        print ("Track: %d\n", track);
+        print ("Disc: %d\n", disc);
+        print ("Play Count: %d\n", play_count);
+        print ("Is Favorite: %d\n", is_favorite);
+        print ("Bitrate: %d\n", bitrate);
+        print ("BPM: %d\n", bpm);
+        print ("Rating: %d\n", rating);
+        print ("Samplerate: %d\n", samplerate);
+        print ("Channels: %d\n", channels);
+        print ("Year: %d\n", year);
+        print ("Playlist ID: %d\n", playlist_id);
+        print ("Duration: %" + "u64" + "u\n", duration);
+        print ("Path: %s\n", path);
+        print ("Title: %s\n", title);
+        print ("Favorite Added: %s\n", favorite_added);
+        print ("Last Played: %s\n", last_played);
+        print ("Album Title: %s\n", album_title);
+        print ("Artist Name: %s\n", artist_name);
+        print ("Composer: %s\n", composer);
+        print ("Grouping: %s\n", grouping);
+        print ("Comment: %s\n", comment);
+        print ("Lyrics: %s\n", lyrics);
+        print ("Genre: %s\n", genre);
+        print ("Album Artist: %s\n", album_artist);
+        print ("Playlist Title: %s\n", playlist_title);
+        print ("Date Added: %s\n", date_added);
+        print ("Playlist Added: %s\n", playlist_added);
     }
 }

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema path="/io/github/ellie_commons/byte/" id="io.github.ellie_commons.byte">
+    <key name="window-height" type="i">
+      <default>700</default>
+      <summary>Most recent window height</summary>
+      <description>Most recent window height</description>
+    </key>
+    <key name="window-width" type="i">
+      <default>1024</default>
+      <summary>Most recent window width</summary>
+      <description>Most recent window width</description>
+    </key>
+
+    <key name="library-location" type="s">
+		  <default>""</default>
+			<summary>Default library location.</summary>
+			<description>Default library location.</description>
+		</key>
+  </schema>
+</schemalist>

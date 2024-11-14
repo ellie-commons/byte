@@ -1,42 +1,30 @@
-# Byte
-Rediscover your music
+# elementary App Template
 
-Interact with your music and fall in love with your library all over again.
-Byte offers a beautiful presentation of your Music Library with loads of powerful features in a minimalistic yet highly customizable UI.
+_a template to develop Apps for [elementary OS](https://elementary.io/) and its AppCenter_
 
-## Handy features:
+This template is based on the official [elementary Developer Documentation](https://docs.elementary.io/develop/). Simply download it and your ready to hack!
 
-* Light and Dark themes.
-* Add up to 100 items under "Recently Added" for songs.
-* Sort individual playlists by album, title, play count or recently added.
-* Advanced Media Details and Artist Info.
-* Group Playlists, Albums, Artists, Songs, etc.
-* Search, add and play your favorite online radio stations.
+## Table of Contents
 
-<p align="center">
-  <a href="https://appcenter.elementary.io/com.github.alainm23.byte">
-    <img src="https://appcenter.elementary.io/badge.svg" alt="Get it on AppCenter">
-  </a>
-  <a href="https://flathub.org/apps/details/com.github.alainm23.byte"><img height="50" alt="Download on Flathub" src="https://flathub.org/assets/badges/flathub-badge-en.png"/></a>
-</p>
+- [Prerequisites](#prerequisites)
+- [Build System](#build-system)
+- [Translations](#translations)
+- [Icons](#icons)
+- [Packaging](#packaging)
+- [Testing](#testing)
 
-![Byte Screenshot](https://github.com/alainm23/byte/raw/master/data/screenshot/screenshot-01.png)
+## Prerequisites
 
-## Building and Installation
+This app template assumes you installed the following as documented in [The Basic Setup of the elementary Developer Documentation](https://docs.elementary.io/develop/writing-apps/the-basic-setup):
 
-You'll need the following dependencies:
-* libgtk-3-dev
-* libgee-0.8-dev
-* libgstreamer-plugins-base1.0-dev
-* libtagc0-dev
-* libsqlite3-dev
-* libsoup2.4-dev
-* libjson-glib-dev
-* libgranite-dev (>=0.5)
-* meson
-* valac >= 0.40.3
+- Development Libraries (`elementary-sdk`)
+- elementary Flatpak Platform and Sdk (`io.elementary.Platform` and `io.elementary.Sdk`)
 
-## Building  
+## Build System
+
+The Build System is preconfigured an ready to use according to [The Build System described in the elementary Developer Documentation](https://docs.elementary.io/develop/writing-apps/our-first-app/the-build-system).
+
+### Compile, Install and Start
 
 Run `meson build` to configure the build environment. Change to the build directory and run `ninja` to build
 
@@ -44,12 +32,64 @@ Run `meson build` to configure the build environment. Change to the build direct
     cd build
     ninja
 
-To install, use `ninja install`, then execute with `com.github.alainm23.byte`
+To install, use `ninja install`, then execute with `io.github.alainm23.planify`
 
     sudo ninja install
-    com.github.alainm23.byte
+    io.github.ellie_commons.byte
 
-## Support
-If you like Byte and you want to support its development,consider supporting via [Patreon](https://www.patreon.com/alainm23) or [PayPal](https://www.paypal.me/alainm23)
+### Uninstall
 
-Made with 💗 in Perú
+Execute the following command to remove the app template's binary from your system:
+
+```bash
+sudo ninja uninstall
+```
+
+## Translations
+
+This template is fully translatable and everything is setup as described in the [Translations section of the elementary Developer Documentation](https://docs.elementary.io/develop/writing-apps/our-first-app/translations)'
+
+### Update translations
+
+Remember that each time you add new translatable strings or change old ones, you should regenerate your `*.pot` and `*.po` files using the `*-pot` and `*-update-po` build targets from the previous two steps as follows:
+
+```bash
+ninja io.github.ellie_commons.byte-pot
+ninja io.github.ellie_commons.byte-update-po
+```
+
+### Add more languages
+
+If you want to support more languages, just list them in the LINGUAS file and generate the new po file with the `*-update-po` target:
+
+```bash
+ninja -C build io.github.ellie_commons.byte-update-po
+```
+
+## Icons
+
+Support for icons is configured too according to the [Icons section of the elementary Developer Documentation](https://docs.elementary.io/develop/writing-apps/our-first-app/icons).
+
+## Packaging
+
+Support for Flatpak is builtin as well and setup according to the [Packaging section of the elementary Developer Documentation](https://docs.elementary.io/develop/writing-apps/our-first-app/packaging).
+
+### Compile, Package and Install
+
+To run a test build and install your app, you can execute flatpak-builder from the project root:
+
+```bash
+flatpak-builder build io.github.ellie_commons.byte.yml --user --install --force-clean --install-deps-from=appcenter
+```
+
+Then execute with
+
+```bash
+flatpak run io.github.ellie_commons.byte
+```
+
+### Uninstall
+
+```bash
+flatpak uninstall io.github.ellie_commons.byte --user
+```

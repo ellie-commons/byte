@@ -1,201 +1,124 @@
-public class MainWindow : Gtk.Window {
-    private uint configure_id;
+/*
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ * SPDX-FileCopyrightText: 2024 Alain <alainmh23@gmail.com>
+ */
 
-    private Widgets.HeaderBar headerbar;
-    private Widgets.MediaControl media_control;
+public class MainWindow : Gtk.ApplicationWindow {
+    private Views.Welcome welcome_view;
+    private Adw.NavigationView navigation_view;
 
-    private Widgets.Welcome welcome_view;
-    private Views.Home home_view;
-
-    private Widgets.QuickFind quick_find;
-    private Widgets.Queue queue;
-
-    private Gtk.Stack main_stack;
-    private Gtk.Stack library_stack;
-
-    public MainWindow (Byte application) {
+    public MainWindow (Gtk.Application application) {
         Object (
             application: application,
-            icon_name: "com.github.alainm23.byte",
+            width_request: 300,
+            height_request: 480,
+            icon_name: "io.github.ellie_commons.byte",
             title: "Byte"
         );
     }
 
+    static construct {
+        weak Gtk.IconTheme default_theme = Gtk.IconTheme.get_for_display (Gdk.Display.get_default ());
+        default_theme.add_resource_path ("/io/github/ellie_commons/byte/");
+    }
+
     construct {
-        get_style_context ().add_class ("rounded");
+        var headerbar = new Gtk.HeaderBar () {
+            decoration_layout = "close:menu"
+        };
+        headerbar.add_css_class ("primary-headerbar");
 
-        headerbar = new Widgets.HeaderBar ();
+        var sidebar_button = new Gtk.Button.from_icon_name ("view-dual-symbolic");
+        headerbar.pack_end (sidebar_button);
 
-        headerbar.show_quick_find.connect (() => {
-            quick_find.reveal = true;
-        });
-
-        set_titlebar (headerbar);
-
-        // Media control
-        media_control = new Widgets.MediaControl ();
-
-        // Media Stack
-        library_stack = new Gtk.Stack ();
-        library_stack.expand = true;
-        Byte.navCtrl.stack = library_stack;
-
-        home_view = new Views.Home ();
-        Byte.navCtrl.add_named (home_view, "home_view");
-
-        var library_view = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-        library_view.pack_start (media_control, false, false, 0);
-        library_view.pack_start (new Gtk.Separator (Gtk.Orientation.HORIZONTAL), false, false, 0);
-        library_view.pack_start (library_stack, true, true, 0);
-
-        // Welcome
-        welcome_view = new Widgets.Welcome ();
-
-        var welcome_scrolled = new Gtk.ScrolledWindow (null, null);
-        welcome_scrolled.hscrollbar_policy = Gtk.PolicyType.NEVER;
-        welcome_scrolled.expand = true;
-        welcome_scrolled.add (welcome_view);
-
-        main_stack = new Gtk.Stack ();
-        main_stack.expand = true;
-        main_stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
-
-        main_stack.add_named (welcome_scrolled, "welcome_view");
-        main_stack.add_named (library_view, "library_view");
-
-        quick_find = new Widgets.QuickFind ();
-        queue = new Widgets.Queue ();
-
-        var overlay = new Gtk.Overlay ();
-        overlay.add_overlay (quick_find);
-        overlay.add_overlay (queue);
-        overlay.add (main_stack);
-
-        add (overlay);
-
-        Byte.utils.quick_find_toggled.connect (() => {
-            quick_find.reveal = !quick_find.reveal;
-        });
+        welcome_view = new Views.Welcome ();
+        navigation_view = new Adw.NavigationView ();
         
-        Byte.utils.hide_quick_find.connect (() => {
-            quick_find.reveal = false;
-        });
+        var toolbar_view = new Adw.ToolbarView () {
+            content = navigation_view
+        };
+        toolbar_view.add_top_bar (headerbar);
 
-        Timeout.add (200, () => {
-            if (Byte.database.is_database_empty ()) {
-                main_stack.visible_child_name = "welcome_view";
-                headerbar.visible_ui = false;
-            } else {
-                main_stack.visible_child_name = "library_view";
+        var sidebar = new Widgets.Sidebar ();
 
-                Byte.navCtrl.go_root ();
-                headerbar.visible_ui = true;
-                
+        var overlay_split_view = new Adw.OverlaySplitView () {
+            collapsed = true,
+            sidebar_position = END,
+            min_sidebar_width = 225,
+            max_sidebar_width = 225,
+            content = toolbar_view,
+            sidebar = sidebar
+        };
 
-                if (Byte.settings.get_boolean ("sync-files")) {
-                    Byte.scan_service.scan_local_files (Byte.settings.get_string ("library-location"));
-                }
-            }
+        var null_title = new Gtk.Grid () {
+            visible = false
+        };
+        set_titlebar (null_title);
 
-            return false;
+        child = overlay_split_view;
+
+        Timeout.add_once (250, () => {
+            init_backend ();
         });
 
         welcome_view.selected.connect ((index) => {
-            string folder;
-            if (index == 0) {
-                folder = "file://" + GLib.Environment.get_user_special_dir (GLib.UserDirectory.MUSIC);
-            } else {
-                folder = Byte.scan_service.choose_folder (this);
+            init_sync.begin (index);
+        });
+
+        sidebar_button.clicked.connect (() => {
+            overlay_split_view.show_sidebar = true;
+        });
+
+        Services.EventBus.instance ().select_view.connect ((view_type) => {
+            if (view_type == ViewType.HOME) {
+                add_home_view ();
             }
 
-            if (folder != null) {
-                headerbar.visible_ui = true;
-
-                Byte.settings.set_string ("library-location", folder);
-                Byte.scan_service.scan_local_files (folder);
-
-                main_stack.visible_child_name = "library_view";
-                Byte.navCtrl.go_root ();
-            }
-        });
-
-        Byte.database.reset_library.connect (() => {
-            main_stack.visible_child_name = "welcome_view";
-            headerbar.visible_ui = false;
-        });
-
-        delete_event.connect (() => {
-            if (Byte.settings.get_boolean ("play-in-background")) {
-                if (Byte.player.player_state == Gst.State.PLAYING) {
-                    return hide_on_delete ();
-                } else {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        });
-
-        Byte.scan_service.sync_started.connect (() => {
-            Granite.Services.Application.set_progress_visible.begin (true, (obj, res) => {
-                try {
-                    Granite.Services.Application.set_progress_visible.end (res);
-                } catch (GLib.Error e) {
-                    critical (e.message);
-                }
-            });
-        });
-
-        Byte.scan_service.sync_finished.connect (() => {
-            Granite.Services.Application.set_progress_visible.begin (false, (obj, res) => {
-                try {
-                    Granite.Services.Application.set_progress_visible.end (res);
-                } catch (GLib.Error e) {
-                    critical (e.message);
-                }
-            });
-        });
-
-        Byte.scan_service.sync_progress.connect ((fraction) => {
-            Granite.Services.Application.set_progress.begin (fraction, (obj, res) => {
-                try {
-                    Granite.Services.Application.set_progress.end (res);
-                } catch (GLib.Error e) {
-                    critical (e.message);
-                }
-            });
+            overlay_split_view.show_sidebar = false;
         });
     }
 
-    public void open_file (File file) {
-        /*
-        if (file.get_uri ().has_prefix ("cdda://")) {
-            audio_cd_view.open_file (file);
-        } else if (!albums_view.open_file (Uri.unescape_string (file.get_uri ()))) {
-            library_manager.player.set_file (file);
+    private async void init_sync (int index) {
+        string folder;
+        if (index == 0) {
+            folder = "file://" + GLib.Environment.get_user_special_dir (GLib.UserDirectory.MUSIC);
+        } else {
+            folder = yield choose_folder ();
         }
-        */
+
+        if (folder == null) {
+            return;
+        }
+
+        Services.Scanner.instance ().scan_local_files (folder);
+        //  Byte.settings.set_string ("library-location", folder);
     }
-    
-    public override bool configure_event (Gdk.EventConfigure event) {
-        if (configure_id != 0) {
-            GLib.Source.remove (configure_id);
+
+    private async string? choose_folder () {
+        var dialog = new Gtk.FileDialog ();
+
+        try {
+            var file = yield dialog.select_folder (this, null);
+            return file.get_uri ();
+        } catch (Error e) {
+            debug ("Error during import backup: %s".printf (e.message));
         }
 
-        configure_id = Timeout.add (100, () => {
-            configure_id = 0;
+        return null;
+    }
 
-            Gdk.Rectangle rect;
-            get_allocation (out rect);
-            Byte.settings.set ("window-size", "(ii)", rect.width, rect.height);
+    private void init_backend () {
+        Services.Database.instance ().init_database ();
 
-            int root_x, root_y;
-            get_position (out root_x, out root_y);
-            Byte.settings.set ("window-position", "(ii)", root_x, root_y);
+        if (Services.Library.instance ().is_empty ()) {
+            navigation_view.add (new Adw.NavigationPage (welcome_view, _("Welcome")));
+            return;
+        }
 
-            return false;
-        });
+        Services.EventBus.instance ().select_view (ViewType.HOME);
+    }
 
-        return base.configure_event (event);
+    private void add_home_view () {
+        
     }
 }

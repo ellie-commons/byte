@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/io/github/ellie_commons/byte">
+    <file alias="Application.css">Application.css</file>
+    <file alias="byte-folder.svg">resources/byte-folder.svg</file>
+    <file alias="byte-folder-music.svg">resources/byte-folder-music.svg</file>
+    <file alias="byte-folder-open.svg">resources/byte-folder-open.svg</file>
+  </gresource>
+</gresources>

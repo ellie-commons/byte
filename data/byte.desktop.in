@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Byte
+Comment=Proves that we can use Vala and Gtk
+Categories=Development;Education;
+
+Icon=io.github.ellie_commons.byte
+Exec=io.github.ellie_commons.byte
+Terminal=false

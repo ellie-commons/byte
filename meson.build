@@ -1,55 +1,75 @@
-project('com.github.alainm23.byte',
-        'vala', 'c',
-        version: '0.4.2')
+# project name and programming language
+project('io.github.ellie_commons.byte', 'vala', 'c', version: '0.1')
 
+# Include Gnome and the translations module
 gnome = import('gnome')
 i18n = import('i18n')
 
-add_project_arguments('-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()), language: 'c')
+# Set our translation domain
+add_global_arguments('-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()), language: 'c')
 
-conf_data = configuration_data()
-conf_data.set_quoted('PROJECT_NAME', meson.project_name())
-conf_data.set_quoted('GETTEXT_PACKAGE', meson.project_name())
-conf_data.set_quoted('VERSION', meson.project_version())
-conf_data.set_quoted('PREFIX', get_option('prefix'))
-conf_data.set_quoted('DATADIR', join_paths (get_option('prefix'), get_option('datadir')))
-config_header = configure_file(
-    input : 'config.vala.in',
-    output : 'config.vala',
-    configuration : conf_data
+## Set de config data
+config_data = configuration_data()
+config_data.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
+config_data.set_quoted('GETTEXT_PACKAGE', meson.project_name())
+config_file = configure_file(
+  input: 'src/Config.vala.in',
+  output: '@BASENAME@',
+  configuration: config_data,
 )
 
-as_resources = gnome.compile_resources (
-    'as-resources', 'data/' + meson.project_name() + '.gresource.xml',
-    source_dir: 'data',
-    c_name: 'as'
+gresource = gnome.compile_resources(
+  'as-resources',
+  'data' / 'byte.gresource.xml',
+  source_dir: 'data',
+  c_name: 'as',
 )
 
-subdir('src')
+# List the dependencies we need
+deps = [
+  dependency('granite-7'),
+  dependency('gtk4'),
+  dependency('libadwaita-1'),
+  dependency('sqlite3'),
+  dependency('gstreamer-pbutils-1.0'),
+  dependency('gstreamer-tag-1.0'),
+  dependency('taglib_c'),
+]
 
+# Create a new executable, list the files we want to compile, and install
 executable(
-    meson.project_name(),
-    as_resources,
-    sources,
-    config_header,
-    dependencies: [
-        dependency('gee-0.8'),
-        dependency('gobject-2.0'),
-        dependency('glib-2.0'),
-        dependency('granite'),
-        dependency('gtk+-3.0'),
-        dependency('sqlite3'),
-        dependency('libsoup-2.4'),
-        dependency('json-glib-1.0'),
-        dependency('gstreamer-pbutils-1.0'),
-        dependency('gstreamer-tag-1.0'),
-        dependency('taglib_c'),
-        meson.get_compiler('c').find_library('m', required : false)
-    ],
-    install: true
+  meson.project_name(),
+  config_file,
+  gresource,
+  'src/Application.vala',
+  'src/MainWindow.vala',
+  'src/Enum.vala',
+
+  'src/Objects/Album.vala',
+  'src/Objects/Artist.vala',
+  'src/Objects/Track.vala',
+    
+  'src/Services/Database.vala',
+  'src/Services/Scanner.vala',
+  'src/Services/Library.vala',
+  'src/Services/EventBus.vala',
+
+  'src/Views/Welcome.vala',
+  'src/Views/Home.vala',
+
+  'src/Widgets/Sidebar.vala',
+  'src/Widgets/Accordion.vala',
+  'src/Widgets/SidebarRow.vala',
+
+  dependencies: deps,
+  install: true,
 )
 
 subdir('data')
 subdir('po')
 
-meson.add_install_script('meson/post_install.py')
+gnome.post_install(
+  glib_compile_schemas: true,
+  gtk_update_icon_cache: true,
+  update_desktop_database: true,
+)

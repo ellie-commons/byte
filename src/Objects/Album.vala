@@ -1,21 +1,15 @@
 public class Objects.Album : GLib.Object {
-    public int id;
-    public int artist_id;
-    public string artist_name;
-    public int year;
-    public string title;
-    public string genre;
+    public string id { get; set; }
+    public string artist_id { get; set; }
+    public int year { get; set; }
+    public string title { get; set; }
+    public string genre { get; set; }
 
-    public Album (int id = 0,
-                  int artist_id = 0,
-                  string artist_name = "",
-                  int year = 0,
-                  string title = "",
-                  string genre = "") {
-        this.id = id;
-        this.artist_id = artist_id;
-        this.year = year;
-        this.genre = genre;
-        this.genre = genre;
+    public void to_string () {
+        print ("Album ID: %s\n", id);
+        print ("Artist ID: %s\n", artist_id);
+        print ("Year: %d\n", year);
+        print ("Title: %s\n", title);
+        print ("Genre: %s\n", genre);
     }
 }
