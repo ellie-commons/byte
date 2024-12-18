@@ -20,7 +20,6 @@ public class Services.Database : GLib.Object {
 
     public void init_database () {
         db_path = Environment.get_user_data_dir () + "/io.github.ellie_commons.byte/database.db";
-        print ("DB: %s\n".printf (db_path));
         Sqlite.Database.open (db_path, out db);
 
         create_tables ();
@@ -81,7 +80,6 @@ public class Services.Database : GLib.Object {
                     comment        TEXT,
                     lyrics         TEXT,
                     genre          TEXT,
-                    album_artist   TEXT,
                     CONSTRAINT unique_track UNIQUE (path),
                     FOREIGN KEY (album_id) REFERENCES albums (id) ON DELETE CASCADE
             );
@@ -249,7 +247,6 @@ public class Services.Database : GLib.Object {
         return_value.comment = stmt.column_text (20);
         return_value.lyrics = stmt.column_text (21);
         return_value.genre = stmt.column_text (22);
-        return_value.album_artist = stmt.column_text (23);
 		return return_value;
 	}
 
@@ -258,10 +255,10 @@ public class Services.Database : GLib.Object {
 		sql = """
             INSERT OR IGNORE INTO Tracks (id, album_id, track, disc, play_count, is_favorite, duration,
             samplerate, channels, bitrate, bpm, rating, year, path, title, date_added, favorite_added,
-            last_played, composer, grouping, comment, lyrics, genre, album_artist)
+            last_played, composer, grouping, comment, lyrics, genre)
             VALUES ($id, $album_id, $track, $disc, $play_count, $is_favorite, $duration,
             $samplerate, $channels, $bitrate, $bpm, $rating, $year, $path, $title, $date_added, $favorite_added,
-            $last_played, $composer, $grouping, $comment, $lyrics, $genre, $album_artist);
+            $last_played, $composer, $grouping, $comment, $lyrics, $genre);
         """;
 
 		db.prepare_v2 (sql, sql.length, out stmt);
@@ -288,7 +285,6 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$comment", track.comment);
         set_parameter_str (stmt, "$lyrics", track.lyrics);
         set_parameter_str (stmt, "$genre", track.genre);
-        set_parameter_str (stmt, "$album_artist", track.album_artist);
 
 		if (stmt.step () != Sqlite.DONE) {
 			warning ("Error: %d: %s", db.errcode (), db.errmsg ());

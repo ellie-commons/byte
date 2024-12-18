@@ -12,18 +12,23 @@ public class Views.Welcome : Adw.Bin {
         };
 
         var load_folder = placeholder.append_button (
-                                                     new ThemedIcon ("byte-folder-music"),
-                                                     _("Load Music"),
-                                                     _("Load from the user's music directory")
+            new ThemedIcon ("byte-folder-music"),
+            _("Load Music"),
+            _("Load from the user's music directory")
         );
 
         var custom_folder = placeholder.append_button (
-                                                       new ThemedIcon ("byte-folder-open"),
-                                                       _("Change Music Folder"),
-                                                       _("Load music from folder")
+            new ThemedIcon ("byte-folder-open"),
+            _("Change Music Folder"),
+            _("Load music from folder")
         );
 
-        child = placeholder;
+        var toolbar_view = new Adw.ToolbarView () {
+            content = placeholder
+        };
+        toolbar_view.add_top_bar (new Widgets.HeaderBar ());
+
+        child = toolbar_view;
 
         load_folder.clicked.connect (() => {
             selected (0);

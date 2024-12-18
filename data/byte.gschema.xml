@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
+  <enum id="io.github.ellie_commons.byte.repeat-mode">
+		<value nick="off" value="0" />
+		<value nick="all" value="1" />
+		<value nick="one" value="2" />
+	</enum>
+
   <schema path="/io/github/ellie_commons/byte/" id="io.github.ellie_commons.byte">
     <key name="window-height" type="i">
       <default>700</default>
@@ -16,6 +22,18 @@
 		  <default>""</default>
 			<summary>Default library location.</summary>
 			<description>Default library location.</description>
+		</key>
+
+    <key name="repeat-mode" enum="io.github.ellie_commons.byte.repeat-mode">
+			<default>"off"</default>
+			<summary>Repeat mode</summary>
+			<description>Repeat mode</description>
+		</key>
+
+    <key name="shuffle-mode" type="b">
+			<default>false</default>
+			<summary>Shuffle mode</summary>
+			<description>Shuffle mode</description>
 		</key>
   </schema>
 </schemalist>

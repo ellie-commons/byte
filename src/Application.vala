@@ -31,6 +31,7 @@ public class Byte : Gtk.Application {
 
     construct {
         create_dir_with_parents ("/io.github.ellie_commons.byte");
+        create_dir_with_parents ("/io.github.ellie_commons.byte/covers");
     }
 
     protected override void startup () {

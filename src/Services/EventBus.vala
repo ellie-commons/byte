@@ -12,4 +12,5 @@
     }
 
     public signal void select_view (ViewType view_type, string id = "");
+    public signal void show_sidebar ();
  }

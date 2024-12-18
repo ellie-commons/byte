@@ -5,6 +5,7 @@
 
 public class Services.Scanner : GLib.Object {
     private Gst.PbUtils.Discoverer discoverer;
+    private Gst.PbUtils.Discoverer discoverer_cover;
     string unknown = _("Unknown");
 
     public int counter = 0;
@@ -24,12 +25,24 @@ public class Services.Scanner : GLib.Object {
 
     construct {
         try {
-            discoverer = new Gst.PbUtils.Discoverer ((Gst.ClockTime) (5 * Gst.SECOND));
+            discoverer = new Gst.PbUtils.Discoverer ((Gst.ClockTime) (5 * Gst.SECOND));            
             discoverer.start ();
             discoverer.discovered.connect (discovered);
+
+            discoverer_cover = new Gst.PbUtils.Discoverer ((Gst.ClockTime) (5 * Gst.SECOND));
         } catch (Error err) {
             warning (err.message);
         }
+
+        Services.Library.instance ().track_added.connect (() => {
+            counter--;
+            sync_progress (((double) counter_max - (double) counter) / (double) counter_max);
+            if (counter <= 0) {
+                sync_finished ();
+                is_sync = false;
+                counter_max = 0;
+            }
+        });
     }
 
     private void discovered (Gst.PbUtils.DiscovererInfo info, Error? err) {
@@ -133,7 +146,6 @@ public class Services.Scanner : GLib.Object {
                     // ARTIST OBJECT
                     var artist = new Objects.Artist ();
                     if (tags.get_string (Gst.Tags.ALBUM_ARTIST, out o)) {
-                        track.album_artist = o;
                         artist.name = o;
                     } else if (tags.get_string (Gst.Tags.ARTIST, out o)) {
                         artist.name = o;
@@ -148,14 +160,6 @@ public class Services.Scanner : GLib.Object {
                         }
                     }
 
-                    print ("Artist\n");
-                    artist.to_string ();
-                    print ("Album\n");
-                    album.to_string ();
-                    print ("Track\n");
-                    track.to_string ();
-                    print ("------------------------\n");
-                    
                     discovered_new_item (artist, album, track);
                 }
             }
@@ -212,7 +216,7 @@ public class Services.Scanner : GLib.Object {
     }
 
     public void found_music_file (string uri) {
-        new Thread<void*> ("found_local_music_file", () => {
+        new Thread<void*> ("found_music_file", () => {
             Idle.add (() => {
                 if (!Services.Database.instance ().music_file_exists (uri)) {
                     discoverer.discover_uri_async (uri);
@@ -230,7 +234,7 @@ public class Services.Scanner : GLib.Object {
     }
 
     public void discovered_new_item (Objects.Artist _artist, Objects.Album _album, Objects.Track _track) {
-        new Thread<void*> ("discovered_new_local_item", () => {
+        new Thread<void*> ("discovered_new_item", () => {
             if (counter <= 0) {
                 sync_started ();
                 is_sync = true;
@@ -246,7 +250,156 @@ public class Services.Scanner : GLib.Object {
 
             _track.album_id = album.id;
             Services.Library.instance ().add_track_if_not_exists (_track);
+
+            save_cover (_track);
+
             return null;
         });
+    }
+
+    private void save_cover (Objects.Track track) {
+        try {
+            var info = discoverer_cover.discover_uri (track.path);
+            read_info (info, track);
+        } catch (Error err) {
+            critical ("%s - %s, Error while importing …".printf (
+                track.album.artist.name, track.title
+            ));
+        }
+    }
+
+    private void read_info (Gst.PbUtils.DiscovererInfo info, Objects.Track track) {
+        string uri = info.get_uri ();
+        bool gstreamer_discovery_successful = false;
+        switch (info.get_result ()) {
+            case Gst.PbUtils.DiscovererResult.OK:
+                gstreamer_discovery_successful = true;
+            break;
+
+            case Gst.PbUtils.DiscovererResult.URI_INVALID:
+                warning ("GStreamer could not import '%s': invalid URI.", uri);
+            break;
+
+            case Gst.PbUtils.DiscovererResult.ERROR:
+                warning ("GStreamer could not import '%s'", uri);
+            break;
+
+            case Gst.PbUtils.DiscovererResult.TIMEOUT:
+                warning ("GStreamer could not import '%s': Discovery timed out.", uri);
+            break;
+
+            case Gst.PbUtils.DiscovererResult.BUSY:
+                warning ("GStreamer could not import '%s': Already discovering a file.", uri);
+            break;
+
+            case Gst.PbUtils.DiscovererResult.MISSING_PLUGINS:
+                warning ("GStreamer could not import '%s': Missing plugins.", uri);
+            break;
+        }
+
+        if (gstreamer_discovery_successful) {
+            Idle.add (() => {
+                Gdk.Pixbuf pixbuf = null;
+                var tag_list = info.get_tags ();
+                var sample = get_cover_sample (tag_list);
+
+                if (sample == null) {
+                    tag_list.get_sample_index (Gst.Tags.PREVIEW_IMAGE, 0, out sample);
+                }
+
+                if (sample != null) {
+                    var buffer = sample.get_buffer ();
+
+                    if (buffer != null) {
+                        pixbuf = get_pixbuf_from_buffer (buffer);
+                        if (pixbuf != null) {
+                            save_cover_pixbuf (pixbuf, track);
+                        }
+                    }
+
+                    debug ("Final image buffer is NULL for '%s'", info.get_uri ());
+                } else {
+                    debug ("Image sample is NULL for '%s'", info.get_uri ());
+                }
+
+                return false;
+            });
+        }
+    }
+
+    private Gst.Sample? get_cover_sample (Gst.TagList tag_list) {
+        Gst.Sample cover_sample = null;
+        Gst.Sample sample;
+        for (int i = 0; tag_list.get_sample_index (Gst.Tags.IMAGE, i, out sample); i++) {
+            var caps = sample.get_caps ();
+            unowned Gst.Structure caps_struct = caps.get_structure (0);
+            int image_type = Gst.Tag.ImageType.UNDEFINED;
+            caps_struct.get_enum ("image-type", typeof (Gst.Tag.ImageType), out image_type);
+            if (image_type == Gst.Tag.ImageType.UNDEFINED && cover_sample == null) {
+                cover_sample = sample;
+            } else if (image_type == Gst.Tag.ImageType.FRONT_COVER) {
+                return sample;
+            }
+        }
+
+        return cover_sample;
+    }
+
+    private Gdk.Pixbuf? get_pixbuf_from_buffer (Gst.Buffer buffer) {
+        Gst.MapInfo map_info;
+
+        if (!buffer.map (out map_info, Gst.MapFlags.READ)) {
+            warning ("Could not map memory buffer");
+            return null;
+        }
+
+        Gdk.Pixbuf pix = null;
+
+        try {
+            var loader = new Gdk.PixbufLoader ();
+
+            if (loader.write (map_info.data) && loader.close ())
+                pix = loader.get_pixbuf ();
+        } catch (Error err) {
+            warning ("Error processing image data: %s", err.message);
+        }
+
+        buffer.unmap (map_info);
+
+        return pix;
+    }
+
+    private void save_cover_pixbuf (Gdk.Pixbuf p, Objects.Track track) {
+        Idle.add (() => {
+            Gdk.Pixbuf ? pixbuf = align_and_scale_pixbuf (p, 256);
+
+            try {
+                string album_path = GLib.Path.build_filename (Util.get_cover_path (), ("album-%s.jpg").printf (track.album.id));
+                if (pixbuf.save (album_path, "jpeg", "quality", "100")) {
+                    //  Byte.database.updated_album_cover (track.album_id);
+                }
+            } catch (Error err) {
+                warning (err.message);
+            }
+
+            return false;
+        });
+    }
+
+    private Gdk.Pixbuf? align_and_scale_pixbuf (Gdk.Pixbuf p, int size) {
+        Gdk.Pixbuf ? pixbuf = p;
+        if (pixbuf.width != pixbuf.height) {
+            if (pixbuf.width > pixbuf.height) {
+                int dif = (pixbuf.width - pixbuf.height) / 2;
+                pixbuf = new Gdk.Pixbuf.subpixbuf (pixbuf, dif, 0, pixbuf.height, pixbuf.height);
+            } else {
+                int dif = (pixbuf.height - pixbuf.width) / 2;
+                pixbuf = new Gdk.Pixbuf.subpixbuf (pixbuf, 0, dif, pixbuf.width, pixbuf.width);
+            }
+        }
+
+        pixbuf = pixbuf.scale_simple (size, size, Gdk.InterpType.BILINEAR);
+
+        return pixbuf;
     }
 }

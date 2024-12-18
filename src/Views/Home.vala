@@ -6,9 +6,18 @@
 
  public class Views.Home : Adw.Bin {
     construct {
-      child = new Gtk.Label ("HOME") {
-         valign = CENTER,
-         halign = CENTER
+      var content_box = new Gtk.Box (VERTICAL, 0) {
+         margin_top = 12,
+         margin_start = 12,
+         margin_end = 12,
+         margin_bottom = 12
       };
+
+      var toolbar_view = new Adw.ToolbarView () {
+         content = content_box
+      };
+      toolbar_view.add_top_bar (new Widgets.HeaderBar ());
+
+      child = toolbar_view;
     }
  }

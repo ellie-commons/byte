@@ -7,6 +7,8 @@ public class MainWindow : Gtk.ApplicationWindow {
     private Views.Welcome welcome_view;
     private Adw.NavigationView navigation_view;
 
+    private Gee.HashMap<string, Adw.NavigationPage> pages_map = new Gee.HashMap<string, Adw.NavigationPage> ();
+
     public MainWindow (Gtk.Application application) {
         Object (
             application: application,
@@ -23,21 +25,27 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
 
     construct {
-        var headerbar = new Gtk.HeaderBar () {
-            decoration_layout = "close:menu"
-        };
-        headerbar.add_css_class ("primary-headerbar");
-
-        var sidebar_button = new Gtk.Button.from_icon_name ("view-dual-symbolic");
-        headerbar.pack_end (sidebar_button);
-
         welcome_view = new Views.Welcome ();
-        navigation_view = new Adw.NavigationView ();
         
-        var toolbar_view = new Adw.ToolbarView () {
-            content = navigation_view
+        navigation_view = new Adw.NavigationView () {
+            hexpand = true,
+            vexpand = true
         };
-        toolbar_view.add_top_bar (headerbar);
+
+        var media_control = new Widgets.MediaControl ();
+
+        var media_control_revealer = new Gtk.Revealer () {
+            child = media_control,
+            valign = END,
+            transition_type = SLIDE_UP,
+            reveal_child = true
+        };
+
+        var overlay = new Gtk.Overlay () {
+            child = navigation_view
+        };
+
+        overlay.add_overlay (media_control_revealer);
 
         var sidebar = new Widgets.Sidebar ();
 
@@ -46,7 +54,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             sidebar_position = END,
             min_sidebar_width = 225,
             max_sidebar_width = 225,
-            content = toolbar_view,
+            content = overlay,
             sidebar = sidebar
         };
 
@@ -65,16 +73,28 @@ public class MainWindow : Gtk.ApplicationWindow {
             init_sync.begin (index);
         });
 
-        sidebar_button.clicked.connect (() => {
+        Services.EventBus.instance ().show_sidebar.connect (() => {
             overlay_split_view.show_sidebar = true;
         });
 
         Services.EventBus.instance ().select_view.connect ((view_type) => {
             if (view_type == ViewType.HOME) {
-                add_home_view ();
+                root_view (new Views.Home (), "home", _("Home"));
+            } else if (view_type == ViewType.RECENTLY_ADDED) {
+                root_view (new Views.RecentlyAdded (), "recently-added", _("Recently Added"));
+            } else if (view_type == ViewType.SONGS) {
+                root_view (new Views.Tracks (), "tracks", _("Songs"));
             }
 
             overlay_split_view.show_sidebar = false;
+        });
+
+        Services.Scanner.instance ().sync_started.connect (() => {
+            //  media_control.reveal_child = true;
+        });
+
+        Services.Scanner.instance ().sync_finished.connect (() => {
+            //  media_control.reveal_child = false;
         });
     }
 
@@ -111,14 +131,22 @@ public class MainWindow : Gtk.ApplicationWindow {
         Services.Database.instance ().init_database ();
 
         if (Services.Library.instance ().is_empty ()) {
-            navigation_view.add (new Adw.NavigationPage (welcome_view, _("Welcome")));
+            navigation_view.replace ({ new Adw.NavigationPage (welcome_view, _("Welcome")) });
             return;
         }
 
         Services.EventBus.instance ().select_view (ViewType.HOME);
     }
 
-    private void add_home_view () {
-        
+    private void root_view (Gtk.Widget view, string key, string title) {
+        Adw.NavigationPage? navigation_page;
+        if (pages_map.has_key (key)) {
+            navigation_page = pages_map[key];
+        } else {
+            navigation_page = new Adw.NavigationPage (view, title);
+            pages_map.set (key, navigation_page);
+        }
+
+        navigation_view.replace ({ navigation_page });
     }
 }

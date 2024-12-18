@@ -3,7 +3,7 @@
  * SPDX-FileCopyrightText: 2024 Alain <alainmh23@gmail.com>
  */
 
- public class Widgets.Sidebar : Granite.Bin {
+ public class Widgets.Sidebar : Adw.Bin {
     construct {
         var headerbar = new Gtk.HeaderBar () {
             title_widget = new Gtk.Label (null),

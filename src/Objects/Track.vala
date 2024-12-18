@@ -18,17 +18,25 @@ public class Objects.Track : GLib.Object {
     public string title { get; set; default = ""; }
     public string favorite_added { get; set; default = ""; }
     public string last_played { get; set; default = ""; }
-    public string album_title { get; set; default = ""; }
-    public string artist_name { get; set; default = ""; }
     public string composer { get; set; default = ""; }
     public string grouping { get; set; default = ""; }
     public string comment { get; set; default = ""; }
     public string lyrics { get; set; default = ""; }
     public string genre { get; set; default = ""; }
-    public string album_artist { get; set; default = ""; }
     public string playlist_title { get; set; default = ""; }
     public string date_added { get; set; default = new GLib.DateTime.now_local ().to_string (); }
     public string playlist_added { get; set; default = ""; }
+
+    Objects.Album? _album;
+    public Objects.Album album {
+        get {
+            if (_album == null) {
+                _album = Services.Library.instance ().get_album (album_id);
+            }
+            
+            return _album;
+        }
+    }
 
     public void to_string () {
         print ("ID: %s\n", id);
@@ -50,14 +58,11 @@ public class Objects.Track : GLib.Object {
         print ("Title: %s\n", title);
         print ("Favorite Added: %s\n", favorite_added);
         print ("Last Played: %s\n", last_played);
-        print ("Album Title: %s\n", album_title);
-        print ("Artist Name: %s\n", artist_name);
         print ("Composer: %s\n", composer);
         print ("Grouping: %s\n", grouping);
         print ("Comment: %s\n", comment);
         print ("Lyrics: %s\n", lyrics);
         print ("Genre: %s\n", genre);
-        print ("Album Artist: %s\n", album_artist);
         print ("Playlist Title: %s\n", playlist_title);
         print ("Date Added: %s\n", date_added);
         print ("Playlist Added: %s\n", playlist_added);

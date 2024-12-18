@@ -44,6 +44,7 @@ executable(
   'src/Application.vala',
   'src/MainWindow.vala',
   'src/Enum.vala',
+  'src/Util.vala',
 
   'src/Objects/Album.vala',
   'src/Objects/Artist.vala',
@@ -52,14 +53,21 @@ executable(
   'src/Services/Database.vala',
   'src/Services/Scanner.vala',
   'src/Services/Library.vala',
+  'src/Services/Player.vala',
   'src/Services/EventBus.vala',
 
   'src/Views/Welcome.vala',
   'src/Views/Home.vala',
+  'src/Views/RecentlyAdded.vala',
+  'src/Views/Tracks.vala',
 
-  'src/Widgets/Sidebar.vala',
   'src/Widgets/Accordion.vala',
+  'src/Widgets/HeaderBar.vala',
+  'src/Widgets/MediaControl.vala',
+  'src/Widgets/MediaCover.vala',
+  'src/Widgets/Sidebar.vala',
   'src/Widgets/SidebarRow.vala',
+  'src/Widgets/TrackRow.vala',
 
   dependencies: deps,
   install: true,

@@ -49,14 +49,13 @@
     }
 
     public bool is_empty () {
-        print ("tracks: %d\n".printf (tracks.size));
         return tracks.size <= 0;
     }
 
     public Objects.Artist? add_artist_if_not_exists (Objects.Artist artist) {
         Objects.Artist? return_value = null;
         lock (artists) {
-            return_value = get_artist (artist.name);
+            return_value = get_artist_by_name (artist.name);
             if (return_value == null) {
                 artist.id = Uuid.string_random ();
                 if (Services.Database.instance ().insert_artist (artist)) {
@@ -70,7 +69,7 @@
         }
     }
 
-    public Objects.Artist? get_artist (string name) {
+    public Objects.Artist? get_artist_by_name (string name) {
         Objects.Artist? return_value = null;
         lock (_artists) {
             foreach (var artist in artists) {
@@ -84,10 +83,24 @@
         return return_value;
     }
 
+    public Objects.Artist? get_artist (string id) {
+        Objects.Artist? return_value = null;
+        lock (_artists) {
+            foreach (var artist in artists) {
+                if (artist.id == id) {
+                    return_value = artist;
+                    break;
+                }
+            }
+        }
+
+        return return_value;
+    }
+
     public Objects.Album? add_album_if_not_exists (Objects.Album album) {
         Objects.Album? return_value = null;
         lock (albums) {
-            return_value = get_album (album.title);
+            return_value = get_album_by_title (album.title);
             if (return_value == null) {
                 album.id = Uuid.string_random ();
                 if (Services.Database.instance ().insert_album (album)) {
@@ -101,11 +114,25 @@
         }
     }
 
-    public Objects.Album? get_album (string title) {
+    public Objects.Album? get_album_by_title (string title) {
         Objects.Album? return_value = null;
         lock (_albums) {
             foreach (var album in albums) {
                 if (album.title == title) {
+                    return_value = album;
+                    break;
+                }
+            }
+        }
+
+        return return_value;
+    }
+
+    public Objects.Album? get_album (string id) {
+        Objects.Album? return_value = null;
+        lock (_albums) {
+            foreach (var album in albums) {
+                if (album.id == id) {
                     return_value = album;
                     break;
                 }
