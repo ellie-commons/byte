@@ -54,7 +54,7 @@
 }
 
 .expand {
-    transition: all 225ms ease-in-out;
+    transition: height 225ms ease-in-out, border-radius 225ms ease-in-out;
 }
 
 .expand.active {

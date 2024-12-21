@@ -252,9 +252,7 @@
         });
 
         Services.Scanner.instance ().sync_finished.connect (() => {
-            if (Services.Player.instance ().current_track != null) {
-                stack.visible_child = main_control_content;
-            }
+            stack.visible_child = main_control_content;
         });
 
         var expand_gesture = new Gtk.GestureClick ();
