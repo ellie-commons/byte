@@ -101,7 +101,7 @@
             var row = (Widgets.TrackRow) _row;
             Services.Player.instance ().set_tracks (
                 tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
+                Services.Settings.instance ().settings.get_boolean ("shuffle-mode"),
                 row.track
             );
         });

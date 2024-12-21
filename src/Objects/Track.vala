@@ -38,6 +38,36 @@ public class Objects.Track : GLib.Object {
         }
     }
 
+    GLib.DateTime _added_date;
+    public GLib.DateTime added_date {
+        get {
+            if (_added_date == null) {
+                _added_date = new GLib.DateTime.from_iso8601 (date_added, new GLib.TimeZone.local ());
+            }
+            
+            return _added_date;
+        }
+    }
+
+    GLib.DateTime _last_played_date;
+    public GLib.DateTime last_played_date {
+        get {
+            if (_last_played_date == null) {
+                _last_played_date = new GLib.DateTime.from_iso8601 (last_played, new GLib.TimeZone.local ());
+            }
+            
+            return _last_played_date;
+        }
+    }
+
+    public string get_cover_path () {
+        return GLib.Path.build_filename (Util.get_cover_path (), ("album-%s.jpg").printf (album.id));
+    }
+
+    public string get_cover_file () {
+        return "file://" + get_cover_path ();
+    }
+
     public void to_string () {
         print ("ID: %s\n", id);
         print ("Album ID: %s\n", album_id);

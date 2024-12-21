@@ -3,12 +3,12 @@
  * SPDX-FileCopyrightText: 2024 Alain <alainmh23@gmail.com>
  */
 
- public class Widgets.TrackRow : Gtk.ListBoxRow {
+ public class Widgets.TrackChild : Gtk.FlowBoxChild {
     public Objects.Track track { get; construct; }
 
     private Gtk.Revealer main_revealer;
 
-    public TrackRow (Objects.Track track) {
+    public TrackChild (Objects.Track track) {
         Object (
             track: track
         );
@@ -16,7 +16,7 @@
 
     construct {
         var track_widget = new Widgets.TrackWidget (track);
-
+        
         main_revealer = new Gtk.Revealer () {
             transition_type = Gtk.RevealerTransitionType.SLIDE_DOWN,
 			child = track_widget
@@ -33,7 +33,7 @@
     public void hide_destroy () {
         main_revealer.reveal_child = false;
         Timeout.add (main_revealer.transition_duration, () => {
-            ((Gtk.ListBox) parent).remove (this);
+            ((Gtk.FlowBox) parent).remove (this);
             return GLib.Source.REMOVE;
         });
     }

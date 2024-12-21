@@ -4,12 +4,20 @@
  */
 
  public class Widgets.MediaCover : Adw.Bin {
-   public int size { get; construct; }
    private Gtk.Image image;
 
-   public MediaCover (int size) {
+   public int size {
+      set {
+         image.pixel_size = value;
+      }
+
+      get {
+         return image.pixel_size;
+      }
+   }
+
+   public MediaCover () {
       Object (
-         size: size,
          overflow: Gtk.Overflow.HIDDEN,
          valign: Gtk.Align.CENTER,
          halign: Gtk.Align.CENTER
@@ -20,18 +28,14 @@
       add_css_class (Granite.STYLE_CLASS_CARD);
       add_css_class (Granite.STYLE_CLASS_ROUNDED);
    
-      image = new Gtk.Image () {
-         pixel_size = size
-      };
+      image = new Gtk.Image ();
 
       child = image;
    }
 
    public void set_track (Objects.Track track) {
       try {
-         image.set_from_file (
-            GLib.Path.build_filename (Util.get_cover_path (), ("album-%s.jpg").printf (track.album.id))
-         );
+         image.set_from_file (track.get_cover_path ());
       } catch (Error e) {
          //  show_default (pixel_size);
       }

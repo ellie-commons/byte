@@ -16,10 +16,13 @@ public class Services.Database : GLib.Object {
         });
     }
 
+    construct {
+        db_path = Environment.get_user_data_dir () + "/io.github.ellie_commons.byte/database.db";
+    }
+
     public signal void opened ();
 
     public void init_database () {
-        db_path = Environment.get_user_data_dir () + "/io.github.ellie_commons.byte/database.db";
         Sqlite.Database.open (db_path, out db);
 
         create_tables ();
@@ -95,6 +98,19 @@ public class Services.Database : GLib.Object {
             warning (errormsg);
         }
     }
+
+    public void clear_database () {
+		File db_file = File.new_for_path (db_path);
+
+		if (db_file.query_exists ()) {
+			try {
+				db_file.delete ();
+			} catch (Error err) {
+				warning (err.message);
+			}
+		}
+	}
+
 
     public bool music_file_exists (string uri) {
         bool file_exists = false;
@@ -287,6 +303,25 @@ public class Services.Database : GLib.Object {
         set_parameter_str (stmt, "$genre", track.genre);
 
 		if (stmt.step () != Sqlite.DONE) {
+			warning ("Error: %d: %s", db.errcode (), db.errmsg ());
+		}
+
+		return stmt.step () == Sqlite.DONE;
+    }
+
+    public bool update_track_count (Objects.Track track) {
+        Sqlite.Statement stmt;
+
+		sql = """
+            UPDATE tracks SET play_count = $play_count, last_played = $last_played WHERE id = $id;
+        """;
+
+        db.prepare_v2 (sql, sql.length, out stmt);
+		set_parameter_int (stmt, "$play_count", track.play_count);
+        set_parameter_str (stmt, "$last_played", track.last_played);
+        set_parameter_str (stmt, "$id", track.id);
+
+        if (stmt.step () != Sqlite.DONE) {
 			warning ("Error: %d: %s", db.errcode (), db.errmsg ());
 		}
 

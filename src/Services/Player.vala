@@ -12,11 +12,9 @@
 
     public signal void current_track_changed (Objects.Track? track);
 
-    public signal void toggle_playing (); 
-
     uint progress_timer = 0;
 
-    public Objects.Track? current_track { get; set; }
+    public Objects.Track? current_track { get; set; default = null; }
     public string? mode { get; set; }
     public Gst.State? player_state { get; set; }
     public Gee.ArrayList<Objects.Track?> queue_playlist { set; get; }
@@ -42,6 +40,12 @@
     }
 
     public double target_progress { get; set; default = 0; }
+
+    public bool can_play { get; set; default = true; }
+
+    public bool can_go_next { get; set; default = true; }
+
+    public bool can_go_previous { get; set; default = true; }
 
     static GLib.Once<Services.Player> _instance;
     public static unowned Services.Player instance () {
@@ -75,6 +79,12 @@
                 case Gst.State.PAUSED:
                     pause_progress_signal ();
                     break;
+            }
+        });
+
+        current_track_changed.connect ((track) => {            
+            if (track != null) {
+                Services.Library.instance ().update_track_count (track);
             }
         });
     }
@@ -131,6 +141,22 @@
         return state;
     }
 
+    public void reset_playing () {
+        if (current_track != null) {
+            state_changed (Gst.State.READY);
+            state_changed (Gst.State.NULL);
+        }
+    }
+
+    public void toggle_playing () {
+        var state = get_state ();
+        if (state == Gst.State.PLAYING) {
+            pause ();
+        } else if (state == Gst.State.PAUSED || state == Gst.State.READY) {
+            play ();
+        }
+    }
+
     public void play () {
         if (current_track != null) {
             state_changed (Gst.State.PLAYING);
@@ -155,7 +181,7 @@
 
         Objects.Track? next_track = null;
 
-        var repeat_mode = Byte.settings.get_enum ("repeat-mode");
+        var repeat_mode = Services.Settings.instance ().settings.get_enum ("repeat-mode");
         if (repeat_mode == 2) {
             next_track = current_track;
             current_track = null;
@@ -178,7 +204,6 @@
 
         if (get_position_sec () < 1) {
             Objects.Track? prev_track = null;
-
             prev_track = get_prev_track (current_track);
 
             if (prev_track != null) {
@@ -243,7 +268,7 @@
                 break;
             default:
                 break;
-            }
+        }
 
         return true;
     }
@@ -262,13 +287,33 @@
                 queue_playlist.insert (0, track);
             }
 
-            Byte.settings.set_boolean ("shuffle-mode", true);
+            Services.Settings.instance ().settings.set_boolean ("shuffle-mode", true);
         } else {
             queue_playlist = sort_playlist (tracks);
-            Byte.settings.set_boolean ("shuffle-mode", false);
+            Services.Settings.instance ().settings.set_boolean ("shuffle-mode", false);
         }
 
         play_tracks (queue_playlist, track);
+    }
+
+    public void shuffle_changed (bool shuffle_mode) {
+        if (queue_playlist == null) {
+            return;
+        }
+
+        if (shuffle_mode) {
+            queue_playlist = generate_shuffle (queue_playlist);
+
+            if (current_track != null) {
+                int index = get_track_index_by_id (current_track.id, queue_playlist);
+                queue_playlist.remove_at (index);
+                queue_playlist.insert (0, current_track);
+            }
+        } else {
+            queue_playlist = sort_playlist (queue_playlist);
+        }
+
+        play_tracks (queue_playlist, current_track);
     }
 
     private Gee.ArrayList<Objects.Track?> sort_playlist (Gee.ArrayList<Objects.Track?> tracks) {
@@ -321,7 +366,7 @@
     public Objects.Track? get_next_track (Objects.Track current_track) {
         int index = get_track_index_by_id (current_track.id, queue_playlist) + 1;
         Objects.Track? returned = null;
-        var repeat_mode = Byte.settings.get_enum ("repeat-mode");
+        var repeat_mode = Services.Settings.instance ().settings.get_enum ("repeat-mode");
 
         if (index >= queue_playlist.size) {
             if (repeat_mode == 0) {

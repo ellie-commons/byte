@@ -10,4 +10,9 @@ public class Util : GLib.Object {
     public static string get_cover_path () {
         return Environment.get_user_data_dir () + "/io.github.ellie_commons.byte/covers";
     }
+
+    public string get_cover_file (int track_id) {
+        var cover_path = GLib.Path.build_filename (COVER_FOLDER, ("track-%i.jpg").printf (track_id));
+        return "file://" + cover_path;
+    }
 }

@@ -1,5 +1,5 @@
 # project name and programming language
-project('io.github.ellie_commons.byte', 'vala', 'c', version: '0.1')
+project('io.github.ellie_commons.byte', 'vala', 'c', version: '1.0')
 
 # Include Gnome and the translations module
 gnome = import('gnome')
@@ -12,6 +12,7 @@ add_global_arguments('-DGETTEXT_PACKAGE="@0@"'.format(meson.project_name()), lan
 config_data = configuration_data()
 config_data.set_quoted('LOCALEDIR', get_option('prefix') / get_option('localedir'))
 config_data.set_quoted('GETTEXT_PACKAGE', meson.project_name())
+config_data.set_quoted('VERSION', meson.project_version())
 config_file = configure_file(
   input: 'src/Config.vala.in',
   output: '@BASENAME@',
@@ -55,6 +56,8 @@ executable(
   'src/Services/Library.vala',
   'src/Services/Player.vala',
   'src/Services/EventBus.vala',
+  'src/Services/Indicator.vala',
+  'src/Services/Settings.vala',
 
   'src/Views/Welcome.vala',
   'src/Views/Home.vala',
@@ -64,10 +67,14 @@ executable(
   'src/Widgets/Accordion.vala',
   'src/Widgets/HeaderBar.vala',
   'src/Widgets/MediaControl.vala',
+  'src/Widgets/MediaControlButtons.vala',
   'src/Widgets/MediaCover.vala',
   'src/Widgets/Sidebar.vala',
   'src/Widgets/SidebarRow.vala',
+  'src/Widgets/TrackWidget.vala',
   'src/Widgets/TrackRow.vala',
+  'src/Widgets/TrackChild.vala',
+  'src/Widgets/SeekBar.vala',
 
   dependencies: deps,
   install: true,

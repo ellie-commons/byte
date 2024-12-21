@@ -172,4 +172,43 @@
 
         return return_value;
     }
+
+    public Gee.ArrayList<Objects.Track> get_tracks_recently_added () {
+        Gee.ArrayList<Objects.Track> return_value = new Gee.ArrayList<Objects.Track> ();
+        lock (_tracks) {
+            foreach (var track in tracks) {
+                return_value.add (track);
+            }
+
+            return_value.sort ((a, b) => {
+                return b.added_date.compare (a.added_date);
+            });
+
+            return return_value;
+        }
+    }
+
+    public Gee.ArrayList<Objects.Track> get_tracks_recently_played () {
+        Gee.ArrayList<Objects.Track> return_value = new Gee.ArrayList<Objects.Track> ();
+        lock (_tracks) {
+            foreach (var track in tracks) {
+                if (track.last_played != "") {
+                    return_value.add (track);
+                }
+            }
+
+            return_value.sort ((a, b) => {
+                return b.last_played_date.compare (a.last_played_date);
+            });
+
+            return return_value;
+        }
+    }
+
+    public void update_track_count (Objects.Track track) {
+        track.play_count = track.play_count + 1;
+        track.last_played = new GLib.DateTime.now_local ().to_string ();
+
+        Services.Database.instance ().update_track_count (track);
+    }
 }

@@ -6,6 +6,7 @@
 public class MainWindow : Gtk.ApplicationWindow {
     private Views.Welcome welcome_view;
     private Adw.NavigationView navigation_view;
+    private Gtk.Revealer media_control_revealer;
 
     private Gee.HashMap<string, Adw.NavigationPage> pages_map = new Gee.HashMap<string, Adw.NavigationPage> ();
 
@@ -34,17 +35,23 @@ public class MainWindow : Gtk.ApplicationWindow {
 
         var media_control = new Widgets.MediaControl ();
 
-        var media_control_revealer = new Gtk.Revealer () {
+        media_control_revealer = new Gtk.Revealer () {
             child = media_control,
             valign = END,
             transition_type = SLIDE_UP,
-            reveal_child = true
+            reveal_child = false
         };
+
+        var dimming_widget = new Adw.Bin () {
+            visible = false
+        };
+        dimming_widget.add_css_class ("dimming-bg");
 
         var overlay = new Gtk.Overlay () {
             child = navigation_view
         };
 
+        overlay.add_overlay (dimming_widget);
         overlay.add_overlay (media_control_revealer);
 
         var sidebar = new Widgets.Sidebar ();
@@ -65,9 +72,12 @@ public class MainWindow : Gtk.ApplicationWindow {
 
         child = overlay_split_view;
 
-        Timeout.add_once (250, () => {
-            init_backend ();
+        Timeout.add (250, () => {
+            Services.Database.instance ().init_database ();
+            return GLib.Source.REMOVE;
         });
+
+        Services.Database.instance ().opened.connect (init_backend);
 
         welcome_view.selected.connect ((index) => {
             init_sync.begin (index);
@@ -90,11 +100,33 @@ public class MainWindow : Gtk.ApplicationWindow {
         });
 
         Services.Scanner.instance ().sync_started.connect (() => {
-            //  media_control.reveal_child = true;
+            media_control_revealer.reveal_child = true;
         });
 
         Services.Scanner.instance ().sync_finished.connect (() => {
-            //  media_control.reveal_child = false;
+            if (Services.Player.instance ().get_state () != Gst.State.PLAYING) {
+                media_control_revealer.reveal_child = false;
+            }
+        });
+
+        Services.Player.instance ().state_changed.connect ((state) => {
+            if (state == Gst.State.PLAYING) {
+                if (Services.Player.instance ().current_track != null) {
+                    media_control_revealer.reveal_child = true;
+                }
+            } else if (state == Gst.State.NULL) {
+                media_control_revealer.reveal_child = false;
+            }
+        });
+
+        media_control.expanded.connect (() => {
+            dimming_widget.visible = media_control.expand;
+        });
+
+        var expand_gesture = new Gtk.GestureClick ();
+        dimming_widget.add_controller (expand_gesture);
+        expand_gesture.pressed.connect ((n_press, x, y) => {
+            media_control.expand = false;
         });
     }
 
@@ -110,8 +142,13 @@ public class MainWindow : Gtk.ApplicationWindow {
             return;
         }
 
-        Services.Scanner.instance ().scan_local_files (folder);
-        //  Byte.settings.set_string ("library-location", folder);
+        go_home ();
+
+        Timeout.add (500, () => {
+            Services.Scanner.instance ().scan_local_files (folder);
+            Services.Settings.instance ().settings.set_string ("library-location", folder);
+            return GLib.Source.REMOVE;
+        });
     }
 
     private async string? choose_folder () {
@@ -128,13 +165,21 @@ public class MainWindow : Gtk.ApplicationWindow {
     }
 
     private void init_backend () {
-        Services.Database.instance ().init_database ();
-
         if (Services.Library.instance ().is_empty ()) {
             navigation_view.replace ({ new Adw.NavigationPage (welcome_view, _("Welcome")) });
             return;
         }
 
+        go_home ();
+
+        //  if (Services.Settings.instance ().settings.get_boolean ("sync-files")) {
+            Services.Scanner.instance ().scan_local_files (
+                Services.Settings.instance ().settings.get_string ("library-location")
+            );
+        //  }
+    }
+
+    public void go_home () {
         Services.EventBus.instance ().select_view (ViewType.HOME);
     }
 

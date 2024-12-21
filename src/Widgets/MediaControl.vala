@@ -8,18 +8,50 @@
     private Gtk.Label title_label;
     private Gtk.Label artist_label;
 
-    public Gtk.Image icon_play;
-    public Gtk.Image icon_pause;
-    public Gtk.Image icon_stop;
+    private Gtk.Button shuffle_button;
+    private Gtk.Button repeat_button;
 
-    public Gtk.Button play_button;
-    private Gtk.Button next_button;
-    private Gtk.Button previous_button;
+    private Gtk.Image icon_shuffle_on;
+    private Gtk.Image icon_shuffle_off;
+
+    private Gtk.Image icon_repeat_one;
+    private Gtk.Image icon_repeat_all;
+    private Gtk.Image icon_repeat_off;
+
+    private Gtk.Stack stack;
+    private Gtk.Revealer stack_revealer;
+    private Gtk.Revealer main_control_revealer;
+    private Gtk.Box card;
+
+    public signal void expanded ();
+
+    bool _expand = false;
+    public bool expand {
+        get {
+            return _expand;
+        }
+
+        set {
+            _expand = value;
+            stack_revealer.reveal_child = !value;
+            main_control_revealer.reveal_child = value;
+
+            if (_expand) {
+                card.add_css_class ("active");
+            } else {
+                card.remove_css_class ("active");
+            }
+            
+            expanded ();
+        }
+    }
     
     construct {
-        media_cover = new Widgets.MediaCover (32);
+        media_cover = new Widgets.MediaCover () {
+            size = 32
+        };
 
-        title_label = new Gtk.Label ("Title") {
+        title_label = new Gtk.Label (null) {
             ellipsize = END,
             single_line_mode = true,
             halign = START,
@@ -27,7 +59,7 @@
         };
         title_label.get_style_context ().add_class ("font-bold");
 
-        artist_label = new Gtk.Label ("Artist") {
+        artist_label = new Gtk.Label (null) {
             halign = START,
             valign = START,
             single_line_mode = true,
@@ -45,56 +77,145 @@
         current_track_grid.attach (title_label, 1, 0, 1, 1);
         current_track_grid.attach (artist_label, 1, 1, 1, 1);
 
-        icon_play = new Gtk.Image.from_icon_name ("media-playback-start-symbolic");
-        icon_pause = new Gtk.Image.from_icon_name ("media-playback-pause-symbolic");
-        icon_stop = new Gtk.Image.from_icon_name ("media-playback-stop-symbolic");
-
-        previous_button = new Gtk.Button () {
-            child = new Gtk.Image.from_icon_name ("media-skip-backward-symbolic"),
-            focusable = false,
-            tooltip_text = _ ("Previous"),
-            valign = Gtk.Align.CENTER
-        };
-        previous_button.get_style_context ().add_class (Granite.STYLE_CLASS_FLAT);
-
-        play_button = new Gtk.Button () {
-            focusable = false,
-            valign = Gtk.Align.CENTER,
-            child = icon_play,
-            tooltip_text = _ ("Play")
-        };
-        play_button.get_style_context ().add_class (Granite.STYLE_CLASS_FLAT);
-
-        next_button = new Gtk.Button () {
-            child = new Gtk.Image.from_icon_name ("media-skip-forward-symbolic"),
-            focusable = false,
-            tooltip_text = _ ("Next"),
-            valign = Gtk.Align.CENTER,
-
-        };
-        next_button.get_style_context ().add_class (Granite.STYLE_CLASS_FLAT);
-
-        var control_box = new Gtk.Box (HORIZONTAL, 0) {
-            hexpand = true,
-            halign = END,
-            margin_end = 6,
-            valign = CENTER
-        };
-
-        control_box.append (previous_button);
-        control_box.append (play_button);
-        control_box.append (next_button);
-
-        var main_content = new Gtk.Box (HORIZONTAL, 6) {
+        var main_control_content = new Gtk.Box (HORIZONTAL, 6) {
             hexpand = true
         };
 
-        main_content.append (current_track_grid);
-        main_content.append (control_box);
+        main_control_content.append (current_track_grid);
+        main_control_content.append (new Widgets.MediaControlButtons () {
+            hexpand = true,
+            halign = END,
+            margin_end = 6
+        });
 
-        var card = new Adw.Bin () {
-            child = main_content,
-            height_request = 42,
+        var sync_image = new Gtk.Image.from_icon_name ("emblem-synchronizing-symbolic") {
+            pixel_size = 24,
+            valign = CENTER,
+            halign = CENTER
+        };
+
+        var sync_label = new Gtk.Label (_("Syncing Library…")) {
+            valign = END,
+            halign = START
+        };
+        sync_label.add_css_class ("small-label");
+        sync_label.add_css_class ("font-bold");
+
+        var sync_progressbar = new Gtk.ProgressBar () {
+            valign = START,
+            hexpand = true
+        };
+
+        var sync_content = new Gtk.Grid () {
+            valign = Gtk.Align.CENTER,
+            row_spacing = 3,
+            column_spacing = 6,
+            margin_start = 6,
+            margin_end = 6
+        };
+        sync_content.attach (sync_image, 0, 0, 1, 2);
+        sync_content.attach (sync_label, 1, 0, 1, 1);
+        sync_content.attach (sync_progressbar, 1, 1, 1, 1);
+        
+        stack = new Gtk.Stack () {
+            transition_type = SLIDE_DOWN,
+            hexpand = true,
+            margin_top = 6,
+            margin_bottom = 6
+        };
+
+        stack.add_child (main_control_content);
+        stack.add_child (sync_content);
+
+        stack_revealer = new Gtk.Revealer () {
+            child = stack,
+            reveal_child = true
+        };
+
+        var main_media_cover = new Widgets.MediaCover () {
+            size = 128
+        };
+
+        var main_title_label = new Gtk.Label (null) {
+            ellipsize = END,
+            single_line_mode = true,
+            halign = CENTER,
+            hexpand = true,
+            margin_top = 12
+        };
+        main_title_label.get_style_context ().add_class ("font-bold");
+
+        var main_artist_label = new Gtk.Label (null) {
+            ellipsize = END,
+            single_line_mode = true,
+            halign = CENTER,
+            hexpand = true,
+            margin_top = 3
+        };
+        main_artist_label.add_css_class (Granite.STYLE_CLASS_SMALL_LABEL);
+        main_artist_label.add_css_class (Granite.STYLE_CLASS_DIM_LABEL);
+
+        var timeline = new Widgets.SeekBar () {
+            margin_start = 12,
+            margin_end = 12,
+            margin_top = 12
+        };
+
+        icon_shuffle_on = new Gtk.Image.from_icon_name ("media-playlist-shuffle-symbolic");
+        icon_shuffle_off = new Gtk.Image.from_icon_name ("media-playlist-no-shuffle-symbolic");
+
+        shuffle_button = new Gtk.Button () {
+            focusable = false,
+            valign = CENTER,
+            child = icon_shuffle_off
+        };
+
+        shuffle_button.get_style_context ().add_class (Granite.STYLE_CLASS_FLAT);
+
+        var media_control_buttons = new Widgets.MediaControlButtons () {
+            icon_size = 48
+        };
+
+        icon_repeat_one = new Gtk.Image.from_icon_name ("media-playlist-repeat-one-symbolic");
+        icon_repeat_all = new Gtk.Image.from_icon_name ("media-playlist-repeat-symbolic");
+        icon_repeat_off = new Gtk.Image.from_icon_name ("media-playlist-no-repeat-symbolic");
+
+        repeat_button = new Gtk.Button () {
+            focusable = false,
+            valign = CENTER,
+            child = icon_repeat_off
+        };
+
+        repeat_button.get_style_context ().add_class (Granite.STYLE_CLASS_FLAT);
+
+        var media_control_box = new Gtk.Box (HORIZONTAL, 24) {
+            hexpand = true,
+            halign = CENTER,
+            margin_top = 12,
+        };
+
+        media_control_box.append (shuffle_button);
+        media_control_box.append (media_control_buttons);
+        media_control_box.append (repeat_button);
+
+        var main_control_box = new Gtk.Box (VERTICAL, 0) {
+            margin_top = 24
+        };
+        main_control_box.append (main_media_cover);
+        main_control_box.append (timeline);
+        main_control_box.append (main_title_label);
+        main_control_box.append (main_artist_label);
+        main_control_box.append (media_control_box);
+
+        var main_window = new Gtk.WindowHandle () {
+            child = main_control_box
+        };
+
+        main_control_revealer = new Gtk.Revealer () {
+            child = main_window
+        };
+
+        card = new Gtk.Box (VERTICAL, 0) {
             margin_top = 6,
             margin_bottom = 6,
             margin_start = 6,
@@ -102,48 +223,105 @@
         };
         card.add_css_class (Granite.STYLE_CLASS_CARD);
         card.add_css_class (Granite.STYLE_CLASS_ROUNDED);
+        card.add_css_class ("expand");
+
+        card.append (stack_revealer);
+        card.append (main_control_revealer);
 
         child = card;
+        check_shuffle_button ();
+        check_repeat_button ();
+        
+        Services.Player.instance ().current_track_changed.connect ((track) => {
+            media_cover.set_track (track);
+            main_media_cover.set_track (track);
 
-        play_button.clicked.connect (() => {
-            Services.Player.instance ().toggle_playing ();
+            title_label.label = track.title;
+            main_title_label.label = track.title;
+
+            artist_label.label = track.album.artist.name;
+            main_artist_label.label = track.album.artist.name;
         });
 
-        Services.Player.instance ().toggle_playing.connect (toggle_playing);
+        Services.Scanner.instance ().sync_started.connect (() => {
+            stack.visible_child = sync_content;
+        });
 
-        Services.Player.instance ().state_changed.connect ((state) => {
-            if (state == Gst.State.PLAYING) {
-                play_button.child = icon_pause;
-            } else {
-                play_button.child = icon_play;
+        Services.Scanner.instance ().sync_progress.connect ((fraction) => {
+            sync_progressbar.fraction = fraction;
+        });
+
+        Services.Scanner.instance ().sync_finished.connect (() => {
+            if (Services.Player.instance ().current_track != null) {
+                stack.visible_child = main_control_content;
             }
         });
 
-        previous_button.clicked.connect (() => {
-            Services.Player.instance ().prev ();
+        var expand_gesture = new Gtk.GestureClick ();
+        main_control_content.add_controller (expand_gesture);
+        expand_gesture.released.connect ((n_press, x, y) => {
+            expand = true;
         });
 
-        next_button.clicked.connect (() => {
-            Services.Player.instance ().next ();
+        Services.Player.instance ().current_progress_changed.connect ((progress) => {
+            timeline.playback_progress = progress;
+            if (timeline.playback_duration == 0) {
+                timeline.playback_duration = Services.Player.instance ().duration / Gst.SECOND;
+            }
         });
 
-        Services.Player.instance ().current_track_changed.connect ((track) => {
-            media_cover.set_track (track);
-            title_label.label = track.title;
-            artist_label.label = track.album.artist.name;
+        Services.Player.instance ().current_duration_changed.connect ((duration) => {
+            timeline.playback_duration = duration / Gst.SECOND;
         });
+
+        timeline.scale.change_value.connect ((scroll, new_value) => {
+            Services.Player.instance ().seek_to_progress (new_value);
+            return true;
+        });
+
+        shuffle_button.clicked.connect (() => {
+            Services.Settings.instance ().settings.set_boolean ("shuffle-mode", !Services.Settings.instance ().settings.get_boolean ("shuffle-mode"));
+            Services.Player.instance ().shuffle_changed (Services.Settings.instance ().settings.get_boolean ("shuffle-mode"));
+        });
+
+        repeat_button.clicked.connect (() => {
+            var enum = Services.Settings.instance ().settings.get_enum ("repeat-mode");
+
+            if (enum == 1) {
+                Services.Settings.instance ().settings.set_enum ("repeat-mode", 2);
+            } else if (enum == 2) {
+                Services.Settings.instance ().settings.set_enum ("repeat-mode", 0);
+            } else {
+                Services.Settings.instance ().settings.set_enum ("repeat-mode", 1);
+            }
+        });
+
+        Services.Settings.instance ().settings.changed["shuffle-mode"].connect (check_shuffle_button);
+        Services.Settings.instance ().settings.changed["repeat-mode"].connect (check_repeat_button);
     }
 
-    private void toggle_playing () {
-        if (play_button.child == icon_play) {
-            play_button.child = icon_pause;
-            Services.Player.instance ().state_changed (Gst.State.PLAYING);
-        } else if (play_button.child == icon_pause) {
-            play_button.child = icon_play;
-            Services.Player.instance ().state_changed (Gst.State.PAUSED);
+    private void check_shuffle_button () {
+        if (Services.Settings.instance ().settings.get_boolean ("shuffle-mode")) {
+            shuffle_button.child = icon_shuffle_on;
+            shuffle_button.tooltip_text = _ ("Shuffle On");
         } else {
-            play_button.child = icon_play;
-            Services.Player.instance ().state_changed (Gst.State.READY);
+            shuffle_button.child = icon_shuffle_off;
+            shuffle_button.tooltip_text = _ ("Shuffle Off");
+        }
+    }
+
+    private void check_repeat_button () {
+        var repeat_mode = Services.Settings.instance ().settings.get_enum ("repeat-mode");
+
+        if (repeat_mode == 0) {
+            repeat_button.child = icon_repeat_off;
+            repeat_button.tooltip_text = _ ("Repeat Off");
+        } else if (repeat_mode == 1) {
+            repeat_button.child = icon_repeat_all;
+            repeat_button.tooltip_text = _ ("Repeat All");
+        } else {
+            repeat_button.child = icon_repeat_one;
+            repeat_button.tooltip_text = _ ("Repeat One");
         }
     }
  }

@@ -6,8 +6,6 @@
 public class Byte : Gtk.Application {
     public MainWindow main_window;
 
-    public static GLib.Settings settings;
-
     public static Byte _instance = null;
     public static Byte instance {
         get {
@@ -18,18 +16,31 @@ public class Byte : Gtk.Application {
         }
     }
 
+    private static bool n_version = false;
+	private static bool clear_database = false;
+	private static string lang = "";
+
+    private const OptionEntry[] OPTIONS = {
+		{ "version", 'v', 0, OptionArg.NONE, ref n_version, "Display version number", null },
+		{ "reset", 'r', 0, OptionArg.NONE, ref clear_database, "Reset Planify", null },
+		{ "lang", 'l', 0, OptionArg.STRING, ref lang, "Open Planify in a specific language", "LANG" },
+		{ null }
+	};
+
     public Byte () {
         Object (
-                application_id: "io.github.ellie_commons.byte",
-                flags: ApplicationFlags.FLAGS_NONE
+            application_id: "io.github.ellie_commons.byte",
+            flags: ApplicationFlags.FLAGS_NONE
         );
     }
 
-    ~Byte () {
-        print ("Destroying Byte\n");
-    }
-
     construct {
+        Intl.setlocale (LocaleCategory.ALL, "");
+        Intl.bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
+        Intl.bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+        Intl.textdomain (GETTEXT_PACKAGE);
+        
+        add_main_option_entries (OPTIONS);
         create_dir_with_parents ("/io.github.ellie_commons.byte");
         create_dir_with_parents ("/io.github.ellie_commons.byte/covers");
     }
@@ -38,11 +49,6 @@ public class Byte : Gtk.Application {
         base.startup ();
 
         Granite.init ();
-
-        Intl.setlocale (LocaleCategory.ALL, "");
-        Intl.bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
-        Intl.bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-        Intl.textdomain (GETTEXT_PACKAGE);
 
         var quit_action = new SimpleAction ("quit", null);
         quit_action.activate.connect (quit);
@@ -63,6 +69,25 @@ public class Byte : Gtk.Application {
     }
 
     protected override void activate () {
+        if (lang != "") {
+			GLib.Environment.set_variable ("LANGUAGE", lang, true);
+		}
+
+		if (n_version) {
+			print ("Version: %s\n".printf (VERSION));
+			return;
+		}
+
+		if (clear_database) {
+			stdout.printf (_("Are you sure you want to reset all? (y/n): "));
+			string? option = stdin.read_line ();
+
+			if (option.down () == _("y") || option.down () == _("yes")) {
+			    Services.Database.instance ().clear_database ();
+				return;
+			}
+		}
+
         if (main_window != null) {
             main_window.present ();
             return;
@@ -70,12 +95,11 @@ public class Byte : Gtk.Application {
 
         var main_window = new MainWindow (this);
 
-        settings = new Settings ("io.github.ellie_commons.byte");
-        settings.bind ("window-height", main_window, "default-height", SettingsBindFlags.DEFAULT);
-        settings.bind ("window-width", main_window, "default-width", SettingsBindFlags.DEFAULT);
+        Services.Settings.instance ().settings.bind ("window-height", main_window, "default-height", SettingsBindFlags.DEFAULT);
+        Services.Settings.instance ().settings.bind ("window-width", main_window, "default-width", SettingsBindFlags.DEFAULT);
 
         var provider = new Gtk.CssProvider ();
-        provider.load_from_resource ("/io/github/ellie_commons/byte/Application.css");
+        provider.load_from_resource ("/io/github/ellie_commons/byte/application.css");
 
         Gtk.StyleContext.add_provider_for_display (
                                                    Gdk.Display.get_default (),
@@ -83,6 +107,9 @@ public class Byte : Gtk.Application {
         );
 
         main_window.present ();
+
+        var indicator = new Services.Indicator ();
+        indicator.initialize ();
     }
 
     public void create_dir_with_parents (string dir) {
