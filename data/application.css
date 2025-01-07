@@ -58,7 +58,6 @@
 }
 
 .expand.active {
-    min-height: 375px;
     border-radius: 12px 12px 0 0;
 }
 

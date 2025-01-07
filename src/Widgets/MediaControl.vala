@@ -199,7 +199,8 @@
         media_control_box.append (repeat_button);
 
         var main_control_box = new Gtk.Box (VERTICAL, 0) {
-            margin_top = 24
+            margin_top = 24,
+            height_request = 375
         };
         main_control_box.append (main_media_cover);
         main_control_box.append (timeline);
@@ -207,12 +208,11 @@
         main_control_box.append (main_artist_label);
         main_control_box.append (media_control_box);
 
-        var main_window = new Gtk.WindowHandle () {
-            child = main_control_box
-        };
-
         main_control_revealer = new Gtk.Revealer () {
-            child = main_window
+            child = new Gtk.WindowHandle () {
+                child = main_control_box
+            },
+            transition_type = SLIDE_UP
         };
 
         card = new Gtk.Box (VERTICAL, 0) {

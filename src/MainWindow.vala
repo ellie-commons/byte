@@ -6,6 +6,7 @@
 public class MainWindow : Gtk.ApplicationWindow {
     private Views.Welcome welcome_view;
     private Adw.NavigationView navigation_view;
+    private Widgets.MediaControl media_control;
     private Gtk.Revealer media_control_revealer;
 
     private Gee.HashMap<string, Adw.NavigationPage> pages_map = new Gee.HashMap<string, Adw.NavigationPage> ();
@@ -33,7 +34,7 @@ public class MainWindow : Gtk.ApplicationWindow {
             vexpand = true
         };
 
-        var media_control = new Widgets.MediaControl ();
+        media_control = new Widgets.MediaControl ();
 
         media_control_revealer = new Gtk.Revealer () {
             child = media_control,
@@ -71,7 +72,7 @@ public class MainWindow : Gtk.ApplicationWindow {
         set_titlebar (null_title);
 
         child = overlay_split_view;
-
+        
         Timeout.add (250, () => {
             Services.Database.instance ().init_database ();
             return GLib.Source.REMOVE;
