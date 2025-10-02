@@ -21,10 +21,12 @@ public class Utils : GLib.Object {
     string colorPrimary;
     string colorAccent;
     string textColorPrimary;
+    Granite.Settings granite_settings; 
 
     public Utils () {
         MAIN_FOLDER = Environment.get_home_dir () + "/.local/share/com.github.alainm23.byte";
         COVER_FOLDER = GLib.Path.build_filename (MAIN_FOLDER, "covers");
+        granite_settings = Granite.Settings.get_default (); 
     }
 
     public void set_items (Gee.ArrayList<Objects.Track?> all_items, bool shuffle_mode, Objects.Track? track) {
@@ -370,5 +372,28 @@ public class Utils : GLib.Object {
         } catch (GLib.Error e) {
             return;
         }
+    }
+
+    private void apply_system_theme () {
+        var theme_id = 1;
+        if (granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK) {
+            theme_id = 2;
+        }
+        apply_theme (theme_id);
+    }
+
+    public void auto_apply_theme () {
+        // Apply the current system theme
+        apply_system_theme ();
+
+        // Then listen for future system theme changes
+        granite_settings.notify["prefers-color-scheme"].connect (apply_system_theme);
+    }
+
+    public void manual_apply_theme (int id) {
+        apply_theme (id);
+
+        // Disable following system theme
+        granite_settings.notify["prefers-color-scheme"].disconnect (apply_system_theme);
     }
 }

@@ -2,6 +2,19 @@ public class Dialogs.Settings : Gtk.Dialog {
     public const string COLOR_CSS = """
         .color-%s radio {
             background: %s;
+            border: 0.25em solid %s;
+            color: %s;
+        }
+    """;
+    public const string BICOLOR_CSS = """
+        .color-%s radio {
+            background: linear-gradient(
+                to bottom left,
+                %s 50%,
+                %s 50%
+            );
+            border: 0.25em solid %s;
+            color: #888;
         }
     """;
 
@@ -44,31 +57,41 @@ public class Dialogs.Settings : Gtk.Dialog {
 
         var settings_01_label = new Gtk.Label (_("Theme"));
 
-        var theme_01 = new Gtk.RadioButton (null);
+        var theme_auto = new Gtk.RadioButton (null);
+        theme_auto.valign = Gtk.Align.START;
+        theme_auto.halign = Gtk.Align.START;
+        theme_auto.tooltip_text = _("Byte Auto");
+        apply_styles_auto ("01", "#ffffff", "#111111", "#fe2851", theme_auto);
+
+        var theme_01 = new Gtk.RadioButton.from_widget (theme_auto);
         theme_01.valign = Gtk.Align.START;
         theme_01.halign = Gtk.Align.START;
-        theme_01.tooltip_text = _("Byte");
-        apply_styles ("01", "#fe2851", theme_01);
+        theme_01.tooltip_text = _("Byte Light");
+        apply_styles ("02", "#fe2851", "#fefefe", "#333333", theme_01);
 
         var theme_02 = new Gtk.RadioButton.from_widget (theme_01);
         theme_02.valign = Gtk.Align.START;
         theme_02.halign = Gtk.Align.START;
-        theme_02.tooltip_text = _("Black");
-        apply_styles ("02", "#333333", theme_02);
+        theme_02.tooltip_text = _("Dark");
+        apply_styles ("03", "#fe2851", "#333333", "#fefefe", theme_02);
 
         var theme_03 = new Gtk.RadioButton.from_widget (theme_01);
         theme_03.valign = Gtk.Align.START;
         theme_03.halign = Gtk.Align.START;
-        theme_03.tooltip_text = _("Turquoise");
-        apply_styles ("04", "#36E683", theme_03);
+        theme_03.tooltip_text = _("Boreal Turquoise");
+        apply_styles ("04", "#36E683", "#333333", "#fefefe", theme_03);
 
         var theme_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        theme_box.pack_start (theme_auto, false, false, 6);
         theme_box.pack_start (theme_01, false, false, 6);
         theme_box.pack_start (theme_02, false, false, 6);
         theme_box.pack_start (theme_03, false, false, 6);
 
         // I think switch most better here (redian23)
         switch (Byte.settings.get_enum ("theme")) {
+          case 0 :
+            theme_auto.active = true;
+            break;
           case 1 :
             theme_01.active = true;
             break;
@@ -377,23 +400,30 @@ public class Dialogs.Settings : Gtk.Dialog {
             message_dialog.destroy ();
         });
 
+        theme_auto.toggled.connect (() => {
+            Byte.settings.set_enum ("theme", 0);
+            Byte.utils.auto_apply_theme ();
+        });
+
         theme_01.toggled.connect (() => {
             Byte.settings.set_enum ("theme", 1);
-            Byte.utils.apply_theme (1);
+            Byte.utils.manual_apply_theme (1);
         });
 
         theme_02.toggled.connect (() => {
             Byte.settings.set_enum ("theme", 2);
-            Byte.utils.apply_theme (2);
+            Byte.utils.manual_apply_theme (2);
         });
 
         theme_03.toggled.connect (() => {
             Byte.settings.set_enum ("theme", 3);
-            Byte.utils.apply_theme (3);
+            Byte.utils.manual_apply_theme (3);
         });
     }
 
-    private void apply_styles (string id, string color, Gtk.RadioButton radio) {
+    private void apply_styles (
+        string id, string theme_color, string accent_color, string tick_color, Gtk.RadioButton radio
+    ) {
         var provider = new Gtk.CssProvider ();
         radio.get_style_context ().add_class ("color-%s".printf (id));
         radio.get_style_context ().add_class ("color-radio");
@@ -401,7 +431,32 @@ public class Dialogs.Settings : Gtk.Dialog {
         try {
             var colored_css = COLOR_CSS.printf (
                 id,
-                color
+                accent_color,
+                theme_color,
+                tick_color
+            );
+
+            provider.load_from_data (colored_css, colored_css.length);
+
+            Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        } catch (GLib.Error e) {
+            return;
+        }
+    }
+
+    private void apply_styles_auto (
+        string id, string color_1, string color_2, string accent_color, Gtk.RadioButton radio
+    ) {
+        var provider = new Gtk.CssProvider ();
+        radio.get_style_context ().add_class ("color-%s".printf (id));
+        radio.get_style_context ().add_class ("color-radio");
+
+        try {
+            var colored_css = BICOLOR_CSS.printf (
+                id,
+                color_1,
+                color_2,
+                accent_color
             );
 
             provider.load_from_data (colored_css, colored_css.length);

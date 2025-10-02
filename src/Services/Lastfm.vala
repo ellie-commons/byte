@@ -63,7 +63,7 @@ public class Services.Lastfm : GLib.Object {
     private void get_musicbrainz_artist_cover (Objects.Track track, string mbid) {
         var url = "https://musicbrainz.org/ws/2/artist/" + mbid + "?inc=url-rels&fmt=json";
         var message = new Soup.Message ("GET", url);
-        message.request_headers.append ("User-Agent", "Byte/0.4.2 ( https://github.com/alainm23/byte )");
+        message.request_headers.append ("User-Agent", "Byte/0.4.3 ( https://github.com/alainm23/byte )");
 
         session.queue_message (message, (sess, mess) => {
             if (mess.status_code == 200) {

@@ -129,7 +129,12 @@ public class Byte : Gtk.Application {
         provider.load_from_resource ("/com/github/alainm23/byte/stylesheet.css");
         Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-        utils.apply_theme (Byte.settings.get_enum ("theme"));
+        var theme_id = Byte.settings.get_enum ("theme");
+        if (theme_id == 0) {
+            utils.auto_apply_theme ();
+        } else {
+            utils.apply_theme (theme_id);
+        }
     }
 
     public override void open (File[] files, string hint) {

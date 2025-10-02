@@ -91,6 +91,7 @@ public class Widgets.TrackRow : Gtk.ListBoxRow {
         image_cover.valign = Gtk.Align.START;
 
         duration_label = new Gtk.Label (Byte.utils.get_formated_duration (track.duration));
+        duration_label.width_chars = 4;
 
         var options_button = new Gtk.Button.from_icon_name ("view-more-horizontal-symbolic", Gtk.IconSize.MENU);
         options_button.valign = Gtk.Align.CENTER;

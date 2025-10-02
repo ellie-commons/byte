@@ -389,7 +389,7 @@ overshoot.left {
 }
 
 .settings-icon {
-    background-color: @colorPrimary;
+    background-color: @colorAccent;
     color: #fff;
     border-radius: 3px;
     padding: 3px;
