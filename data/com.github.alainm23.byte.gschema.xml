@@ -40,15 +40,26 @@
 		<value nick="Files" value="1" />
 	</enum>
 
-    <schema path="/com/github/alainm23/byte/" id="com.github.alainm23.byte" gettext-domain="com.github.alainm23.byte">
+	<enum id="com.github.alainm23.byte.queue-type">
+		<value nick="None" value="0" />
+		<value nick="RecentlyAdded" value="1" />
+		<value nick="Songs" value="2" />
+		<value nick="Playlist" value="3" />
+		<value nick="Album" value="4" />
+		<value nick="Artist" value="5" />
+		<value nick="Favorites" value="6" />
+		<value nick="Radio" value="7" />
+	</enum>
+
+	<schema path="/com/github/alainm23/byte/" id="com.github.alainm23.byte" gettext-domain="com.github.alainm23.byte">
 		<key name="theme" enum="com.github.alainm23.byte.theme">
-            <default>"Byte"</default>
-            <summary>Theme</summary>
-            <description>Theme</description>
-        </key>
+			<default>"Byte"</default>
+			<summary>Theme</summary>
+			<description>Theme</description>
+		</key>
 
 		<key name="library-location" type="s">
-		    <default>""</default>
+			<default>""</default>
 			<summary>Default library location.</summary>
 			<description>Default library location.</description>
 		</key>
@@ -101,10 +112,34 @@
 			<description>Album order reverse</description>
 		</key>
 
-        <key name="shuffle-mode" type="b">
+		<key name="shuffle-mode" type="b">
 			<default>false</default>
 			<summary>Shuffle mode</summary>
 			<description>Shuffle mode</description>
+		</key>
+
+		<key name="last-played" type="i">
+			<default>0</default>
+			<summary>Last track played</summary>
+			<description>ID of the last track that was played, to restore it after restart</description>
+		</key>
+
+		<key name="track-progression" type="d">
+			<default>0.0</default>
+			<summary>Play progression</summary>
+			<description>Progression of the last track that was played, to restore it after restart</description>
+		</key>
+		
+		<key name="queue-type" enum="com.github.alainm23.byte.queue-type">
+			<default>"None"</default>
+			<summary>Queue Type</summary>
+			<description>Type of queue that was used, to restore it after restart</description>
+		</key>
+		
+		<key name="queue-id" type="i">
+			<default>0</default>
+			<summary>Queue Type</summary>
+			<description>Type of queue that was used, to restore it after restart</description>
 		</key>
 		
 		<key name="window-position" type="(ii)">

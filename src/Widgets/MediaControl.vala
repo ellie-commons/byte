@@ -102,6 +102,11 @@ public class Widgets.MediaControl : Gtk.Revealer {
             if (timeline.playback_duration == 0) {
                 timeline.playback_duration = Byte.player.duration / Gst.SECOND;
             }
+            // Save progress only every two seconds to reduce disk writes
+            int int_progress = (int)(progress * 100);
+            if (progress >= 0.0 && progress <= 0.99 && int_progress % 2 == 1) {
+                Byte.settings.set_double ("track-progression", progress);
+            }
         });
 
         Byte.player.current_duration_changed.connect ((duration) => {

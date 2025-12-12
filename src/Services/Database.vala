@@ -488,14 +488,15 @@ public class Services.Database : GLib.Object {
         Sqlite.Statement stmt;
         int res;
 
-        string sql = """
-            SELECT tracks.id, tracks.path, tracks.title, tracks.duration, tracks.is_favorite, tracks.track, tracks.date_added, 
-            tracks.play_count, tracks.album_id, albums.title, artists.id, artists.name, tracks.favorite_added, tracks.last_played FROM tracks 
-            INNER JOIN albums ON tracks.album_id = albums.id
-            INNER JOIN artists ON albums.artist_id = artists.id WHERE id = ?;
+        string sql_track = """
+            SELECT tracks.id, tracks.path, tracks.title, tracks.duration, tracks.is_favorite, tracks.track,
+                   tracks.date_added, tracks.play_count, tracks.favorite_added, tracks.last_played,
+                   tracks.album_id, tracks.album_artist
+            FROM tracks 
+            WHERE id = ?
         """;
 
-        res = db.prepare_v2 (sql, -1, out stmt);
+        res = db.prepare_v2 (sql_track, -1, out stmt);
         assert (res == Sqlite.OK);
 
         res = stmt.bind_int (1, id);
@@ -512,12 +513,26 @@ public class Services.Database : GLib.Object {
             track.track = stmt.column_int (5);
             track.date_added = stmt.column_text (6);
             track.play_count = stmt.column_int (7);
-            track.album_id = stmt.column_int (8);
-            track.album_title = stmt.column_text (9);
-            track.artist_id = stmt.column_int (10);
+            track.favorite_added = stmt.column_text (8);
+            track.last_played = stmt.column_text (9);
+            track.album_id = stmt.column_int (10);
+            // Artist name is retrieved from the Track, not the Artist of the Album
             track.artist_name = stmt.column_text (11);
-            track.favorite_added = stmt.column_text (12);
-            track.last_played = stmt.column_text (13);
+
+            if (track.album_id != 0) {
+                string sql_album = "SELECT albums.title, albums.artist_id FROM albums WHERE id = ?";
+
+                res = db.prepare_v2 (sql_album, -1, out stmt);
+                assert (res == Sqlite.OK);
+
+                res = stmt.bind_int (1, track.album_id);
+                assert (res == Sqlite.OK);
+
+                if (stmt.step () == Sqlite.ROW) {
+                    track.album_title = stmt.column_text (0);
+                    track.artist_id = stmt.column_int (1);
+                }
+            }
         }
 
         return track;

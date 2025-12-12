@@ -1,4 +1,6 @@
 public class Views.Album : Gtk.EventBox {
+    private static int QUEUE_TYPE = 4;
+
     public Objects.Album album { get; construct; }
 
     private Gtk.Label title_label;
@@ -11,7 +13,7 @@ public class Views.Album : Gtk.EventBox {
     private string cover_path;
     private Widgets.Cover image_cover;
     
-    private Gee.ArrayList<Objects.Track?> all_tracks;
+    public Gee.ArrayList<Objects.Track?> all_tracks;
 
     public Album (Objects.Album album) {
         Object (
@@ -167,27 +169,15 @@ public class Views.Album : Gtk.EventBox {
         listbox.row_activated.connect ((row) => {
             var item = row as Widgets.TrackAlbumRow;
             
-            Byte.utils.set_items (
-                all_tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
-                item.track
-            );
+            Byte.utils.play_queue_start_with_track (all_tracks, QUEUE_TYPE, item.track, 0, album.id);
         });
 
         play_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                false,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE, false);
         });
 
         shuffle_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                true,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE, true);
         });
 
         Byte.database.adden_new_track.connect ((track) => {
@@ -229,4 +219,4 @@ public class Views.Album : Gtk.EventBox {
             });
         });
     }
-}
+}   

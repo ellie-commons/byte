@@ -196,7 +196,7 @@ public class Widgets.Queue : Gtk.Revealer {
 
         add (main_box);
 
-        Byte.utils.play_items.connect ((_items, _track) => {
+        Byte.utils.play_items.connect ((_items, _track, queue_type, queue_id, progress) => {
             listbox.foreach ((widget) => {
                 widget.destroy ();
             });
@@ -211,11 +211,16 @@ public class Widgets.Queue : Gtk.Revealer {
             }
 
             add_all_items (items);
+        
+            if (queue_type != -1) {
+                Byte.settings.set_enum ("queue-type", queue_type);
+                Byte.settings.set_int ("queue-id", queue_id);   
+            }
 
             if (_track == null) {
                 Byte.player.set_track (items [0]);
             } else {
-                Byte.player.set_track (_track);
+                Byte.player.set_track (_track, progress);
 
                 int current_index = Byte.utils.get_track_index_by_id (_track.id, items);
 
@@ -234,6 +239,8 @@ public class Widgets.Queue : Gtk.Revealer {
         });
 
         Byte.player.current_track_changed.connect ((track) => {
+            Byte.settings.set_int ("last-played", track.id);
+
             int current_index = Byte.utils.get_track_index_by_id (track.id, items);
 
             listbox.set_filter_func ((row) => {

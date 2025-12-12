@@ -120,26 +120,37 @@ public class Services.Player : GLib.Object {
         play ();
     }
 
-    public void set_track (Objects.Track? track) {
+    public void set_track (Objects.Track? track, double progress = 0) {
         if (track == null) {
             current_duration_changed (0);
         }
 
-        if (load_track (track)) {
+        if (load_track (track, progress)) {
             current_track_changed (track);
             mode_changed ("track");
             mode = "track";
 
             play ();
+        } else {
+            next ();
         }
     }
 
-    public bool load_track (Objects.Track? track, double progress = 0) {
+    public bool load_track (Objects.Track? track, double progress) {
         if (track == current_track || track == null) {
             return false;
         }
+        print ("loading track: %s\n", track.title);
 
         current_track = track;
+
+        // Skip current track if the file is not found
+        // TODO ajouter une notification d'avertissement
+        File song_file = File.new_for_uri (track.path);
+        if (!song_file.query_exists ()) {
+            print ("File not found: %s\n", track.path);
+            return false;
+        }
         
         var last_state = get_state ();
         stop ();
@@ -149,7 +160,7 @@ public class Services.Player : GLib.Object {
         state_changed (Gst.State.PLAYING);
         player_state = Gst.State.PLAYING;
 
-        while (duration == 0) {};
+        while (duration == 0 || duration == -1) {};
 
         if (last_state != Gst.State.PLAYING) {
             pause ();
@@ -157,7 +168,7 @@ public class Services.Player : GLib.Object {
 
         current_duration_changed (duration);
 
-        if (progress > 0) {
+        if (progress > 0.0) {
             seek_to_progress (progress);
             current_progress_changed (progress);
         }
@@ -199,7 +210,7 @@ public class Services.Player : GLib.Object {
     public void stop_progress_signal (bool reset_timer = false) {
         pause_progress_signal ();
         if (reset_timer) {
-            current_progress_changed (0);
+            current_progress_changed (0.0);
         }
     }
 

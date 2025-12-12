@@ -19,6 +19,7 @@ public class Services.TagManager : GLib.Object {
 
             if (info.get_result () != Gst.PbUtils.DiscovererResult.OK) {
                 if (err != null) {
+                    // Printing err.message often triggers Segmentation fault for some reason
                     warning ("DISCOVER ERROR: '%d' %s %s\n(%s)", err.code, err.message, info.get_result ().to_string (), uri);
                 }
             } else {

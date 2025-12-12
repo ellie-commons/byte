@@ -1,4 +1,6 @@
 public class Views.Playlist : Gtk.EventBox {
+    private static int QUEUE_TYPE = 3;
+
     public Objects.Playlist playlist { get; construct; }
     public Gtk.Entry title_entry;
     private Gtk.TextView note_text;
@@ -15,7 +17,7 @@ public class Views.Playlist : Gtk.EventBox {
     private string cover_path;
     private Widgets.Cover image_cover;
 
-    private Gee.ArrayList<Objects.Track?> all_tracks;
+    public Gee.ArrayList<Objects.Track?> all_tracks;
 
     public Playlist (Objects.Playlist playlist) {
         Object (
@@ -290,27 +292,15 @@ public class Views.Playlist : Gtk.EventBox {
         listbox.row_activated.connect ((row) => {
             var item = row as Widgets.TrackRow;
 
-            Byte.utils.set_items (
-                all_tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
-                item.track
-            );
+            Byte.utils.play_queue_start_with_track (all_tracks, QUEUE_TYPE, item.track, 0, playlist.id);
         });
 
         play_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                false,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE, false);
         });
 
         shuffle_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                true,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE, true);
         });
 
         sort_button.toggled.connect (() => {

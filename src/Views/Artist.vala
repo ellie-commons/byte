@@ -1,4 +1,6 @@
 public class Views.Artist : Gtk.EventBox {
+    private static int QUEUE_TYPE = 5;
+
     public Objects.Artist artist { get; construct; }
 
     private Gtk.Label name_label;
@@ -6,7 +8,7 @@ public class Views.Artist : Gtk.EventBox {
     private Gtk.ListBox listbox;
     private Gtk.FlowBox flowbox;
 
-    private Gee.ArrayList<Objects.Track?> all_tracks;
+    public Gee.ArrayList<Objects.Track?> all_tracks;
     private Gee.ArrayList<Objects.Album?> all_albums;
 
     public Artist (Objects.Artist artist) {
@@ -148,11 +150,7 @@ public class Views.Artist : Gtk.EventBox {
         listbox.row_activated.connect ((row) => {
             var item = row as Widgets.TrackRow;
             
-            Byte.utils.set_items (
-                all_tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
-                item.track
-            );
+            Byte.utils.play_queue_start_with_track (all_tracks, QUEUE_TYPE, item.track, 0, artist.id);
         });
 
         flowbox.child_activated.connect ((child) => {

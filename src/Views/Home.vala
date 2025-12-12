@@ -1,6 +1,8 @@
 public class Views.Home : Gtk.EventBox {
+    private static int QUEUE_TYPE = 1;
+
     private Gtk.ListBox listbox;
-    private Gee.ArrayList<Objects.Track?> all_tracks;
+    public Gee.ArrayList<Objects.Track?> all_tracks;
     
     construct {
         get_style_context ().add_class (Gtk.STYLE_CLASS_VIEW);
@@ -126,11 +128,7 @@ public class Views.Home : Gtk.EventBox {
         listbox.row_activated.connect ((row) => {
             var item = row as Widgets.TrackRow;
             
-            Byte.utils.set_items (
-                all_tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
-                item.track
-            );
+            Byte.utils.play_queue_start_with_track (all_tracks, QUEUE_TYPE, item.track);
         });
 
         Byte.database.adden_new_track.connect ((track) => {

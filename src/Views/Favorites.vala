@@ -1,9 +1,12 @@
 public class Views.Favorites : Gtk.EventBox {
+    private static int QUEUE_TYPE = 6;
+
     private Gtk.ListBox listbox;
     public signal void go_back ();
+
     private int item_index;
     private int item_max;
-    private Gee.ArrayList<Objects.Track?> all_tracks;
+    public Gee.ArrayList<Objects.Track?> all_tracks;
 
     public Favorites () {} 
 
@@ -183,29 +186,17 @@ public class Views.Favorites : Gtk.EventBox {
         });
 
         play_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                false,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE,false);
         });
 
         shuffle_button.clicked.connect (() => {
-            Byte.utils.set_items (
-                all_tracks,
-                true,
-                null
-            );
+            Byte.utils.play_queue (all_tracks, QUEUE_TYPE,true);
         });
 
         listbox.row_activated.connect ((row) => {
             var item = row as Widgets.TrackRow;
             
-            Byte.utils.set_items (
-                all_tracks,
-                Byte.settings.get_boolean ("shuffle-mode"),
-                item.track
-            );
+            Byte.utils.play_queue_start_with_track (all_tracks, QUEUE_TYPE, item.track);
         });
 
         scrolled.edge_reached.connect((pos)=> {
