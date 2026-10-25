@@ -1,6 +1,6 @@
 app-id: com.github.alainm23.byte
 runtime: io.elementary.Platform
-runtime-version: 'daily' #change this to release version (currently 0.1.0) once they fix the lack of inherited GL extensions bug
+runtime-version: '9.1'
 sdk: io.elementary.Sdk
 command: com.github.alainm23.byte
 finish-args:
@@ -23,22 +23,10 @@ cleanup:
   - '*.a'
   - '*.la'
 modules:
-
-  - name: taglib
-    buildsystem: cmake-ninja
-    config-opts:
-      - '-DBUILD_SHARED_LIBS=ON'
-    cleanup:
-      - /bin
-    sources:
-        - type: git
-          url: https://github.com/taglib/taglib.git
-          tag: v1.12
+  - shared-modules/libsoup/libsoup-2.4.json
 
   - name: byte
     buildsystem: meson
-    config-opts:
-     - '--libdir=lib'
     sources:
       - type: dir
         path: .
